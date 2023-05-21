@@ -10,7 +10,7 @@ def call_sepehr(data):
 
 def call_input_setting_db(token):
     r = requests.get(
-        url='http://192.168.115.10:8083/api/RouteMonitoring/GetAllRouteMonitoringDetail',
+        url='http://192.168.115.10:8081/api/RouteMonitoring/GetAllRouteMonitoringDetail',
         headers={'Authorization': f'Bearer {token}'}
     )
     return r
