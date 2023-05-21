@@ -9,8 +9,7 @@ import datetime
 from request_APIs import call_sepehr, call_login_token, call_input_setting_db
 
 
-def token_handler(logger):
-    logger.info('Token handling is started.')
+def api_token_handler():
     if 'token_expire_date.txt' in os.listdir():
         with open('token_expire_date.txt', 'r') as f:
             te = f.read()
@@ -26,7 +25,6 @@ def token_handler(logger):
         expire_date = expire_date.split('T')[0]
         with open('token_expire_date.txt', 'w') as f:
             f.write(expire_date + 'token:' + token)
-    logger.info('Token handling is OK.')
     return token
 
 
@@ -40,7 +38,7 @@ def main():
     logger.setLevel(logging.INFO)
 
     logger.info('Application started.')
-    token = token_handler(logger)
+    token = api_token_handler()
     # region API request for input setting
     logger.info('Calling input setting API.')
     data = call_input_setting_db(token)
@@ -63,27 +61,28 @@ def main():
     # endregion
 
     while True:
-        token = token_handler(logger)
+        token = api_token_handler()
         for index, row in df_routes.iterrows():
             if ((dt.now() - row[1]).total_seconds() / 60) >= row[0]['interval']:
                 logger.info(
                     f'Scraping the route {row[0]["iataCodeOrigin"]} to {row[0]["iataCodeDestination"]} for {row[0]["monitoringDays"]} days(day) with interval of {row[0]["interval"]} minutes started.')
-                request_time = dt.now()#.strftime("%d-%m-%Y %H:%M:%S")
+                request_time = dt.now().strftime("%d-%m-%Y %H:%M:%S")
                 try:
                     result = call_sepehr(json.dumps(row[0]))
                 except:
                     error_message = 'There occured an error in the call_sepehr function.'
-                response_time = dt.now()#.strftime("%d-%m-%Y %H:%M:%S")
+                response_time = dt.now().strftime("%d-%m-%Y %H:%M:%S")
                 if result:
                     logger.info(
                         f'Scraping the route {row[0]["iataCodeOrigin"]} to {row[0]["iataCodeDestination"]} for {row[0]["monitoringDays"]} days(day) with interval of {row[0]["interval"]} minutes finished successfuly.')
                     error_message = None
                     df_routes.loc[index, 'start_process_time'] = request_time
                     df_routes.to_csv('routes_start_time.csv', index=False)
-                    result_dict = json.loads(result.text)
+                    result_dict = json.loads(result.text) if json.loads(result.text)['data'] != '[]' else {'data':[{}]}
                     result_dict['createRouteMonitoringResultRequestItemViewModels'] = result_dict.pop('data')
-                    result_dict['createRouteMonitoringResultRequestItemViewModels'] = json.loads(
-                        result_dict['createRouteMonitoringResultRequestItemViewModels'])
+                    if result_dict['createRouteMonitoringResultRequestItemViewModels'] != [{}]:
+                        result_dict['createRouteMonitoringResultRequestItemViewModels'] = json.loads(
+                            result_dict['createRouteMonitoringResultRequestItemViewModels'])
                     result_dict["requestTime"] = str(request_time).split(".")[0]
                     result_dict['responseTime'] = str(response_time).split(".")[0]
                     result_dict['errorMessage'] = f'{error_message}'
@@ -97,7 +96,7 @@ def main():
                     logger.error(
                         f'Scraping the route {row[0]["iataCodeOrigin"]} to {row[0]["iataCodeDestination"]} for {row[0]["monitoringDays"]} days(day) with interval of {row[0]["interval"]} minutes was unsuccessful.')
                     error_message = 'Error in Scraper'
-                    r = requests.post(url='http://192.168.115.10:8083/api/RouteMonitoring/CreateRouteMonitoringResult',
+                    r = requests.post(url='http://192.168.115.10:8081/api/RouteMonitoring/CreateRouteMonitoringResult',
                                       json={'createRouteMonitoringResultRequestItemViewModels': [{}],
                                             'requestTime': str(request_time).split(".")[0],
                                             'responseTime': str(response_time).split(".")[0],

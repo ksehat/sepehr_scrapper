@@ -1,4 +1,5 @@
 import copy
+import datetime
 import time
 import datetime as dt
 import pandas as pd
@@ -87,8 +88,7 @@ def get_booking_fids():
         options.add_argument('--ignore-certificate-errors')
         options.add_argument('--incognito')
         # options.add_argument('--headless')
-        ser = Service(r"C:/Project/Web Scraping/chromedriver_111.exe")
-        driver = webdriver.Chrome(service=ser, options=options)
+        driver = webdriver.Chrome("C:\Project\Web Scraping/chromedriver", chrome_options=options)
         driver.get(url=url)
 
         airports_len = len(driver.find_elements(By.XPATH, '//li[@class=""]'))
@@ -136,6 +136,7 @@ def get_booking_fids():
                 'flight_date': [item for sublist in [x[10] for x in rowed_data_list] for item in sublist],
             }
         )
+        # df.to_excel(f'fids-{str(datetime.datetime.now()).split(" ")[0]}.xlsx')
         return df
     except Exception as e:
         print(f'There occured an error in the sepehr_scraper.py. {e}')
