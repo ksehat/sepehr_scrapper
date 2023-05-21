@@ -1,16 +1,47 @@
-import copy
-import datetime
+import os
+import json
+import schedule
 import time
-import datetime as dt
+from datetime import datetime as dt
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
+import requests
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.chrome.service import Service
+
+
+def call_login_token():
+    dict1 = {
+        "username": "k.sehat",
+        "password": "Ks@123456",
+        "applicationType": 961,
+        "iP": "1365"
+    }
+    r = requests.post(url='http://192.168.115.10:8081/api/Authentication/RequestToken',
+                      json=dict1,
+                      )
+    token = json.loads(r.text)['token']
+    expire_date = json.loads(r.text)['expires']
+    return token, expire_date
+
+
+def api_token_handler():
+    if 'token_expire_date.txt' in os.listdir():
+        with open('token_expire_date.txt', 'r') as f:
+            te = f.read()
+        expire_date = te.split('token:')[0]
+        token = te.split('token:')[1]
+        if dt.now() >= dt.strptime(expire_date, '%Y-%m-%d'):
+            token, expire_date = call_login_token()
+            expire_date = expire_date.split('T')[0]
+            with open('token_expire_date.txt', 'w') as f:
+                f.write(expire_date + 'token:' + token)
+    else:
+        token, expire_date = call_login_token()
+        expire_date = expire_date.split('T')[0]
+        with open('token_expire_date.txt', 'w') as f:
+            f.write(expire_date + 'token:' + token)
+    return token
 
 
 def tab_scrapper(driver, tab):
@@ -119,28 +150,50 @@ def get_booking_fids():
                 except:
                     continue
 
-
         df = pd.DataFrame(
             {
-                'airport': [item for sublist in [x for x in airport_name_list] for item in sublist],
-                'flight_day': [item for sublist in [x[0] for x in rowed_data_list] for item in sublist],
-                'airline': [item for sublist in [x[1] for x in rowed_data_list] for item in sublist],
-                'flight_number': [item for sublist in [x[2] for x in rowed_data_list] for item in sublist],
-                'flight_origin': [item for sublist in [x[3] for x in rowed_data_list] for item in sublist],
-                'flight_dest': [item for sublist in [x[4] for x in rowed_data_list] for item in sublist],
-                'flight_status': [item for sublist in [x[5] for x in rowed_data_list] for item in sublist],
-                'aircraft2': [item for sublist in [x[6] for x in rowed_data_list] for item in sublist],
-                'aircraft3': [item for sublist in [x[7] for x in rowed_data_list] for item in sublist],
-                'aircraft': [item for sublist in [x[8] for x in rowed_data_list] for item in sublist],
-                'counter': [item for sublist in [x[9] for x in rowed_data_list] for item in sublist],
-                'flight_date': [item for sublist in [x[10] for x in rowed_data_list] for item in sublist],
+                'Airport': [item for sublist in [x for x in airport_name_list] for item in sublist],
+                'FlightDay': [item for sublist in [x[0] for x in rowed_data_list] for item in sublist],
+                'Airline': [item for sublist in [x[1] for x in rowed_data_list] for item in sublist],
+                'FlightNumber': [item for sublist in [x[2] for x in rowed_data_list] for item in sublist],
+                'FlightOrigin': [item for sublist in [x[3] for x in rowed_data_list] for item in sublist],
+                'FlightDest': [item for sublist in [x[4] for x in rowed_data_list] for item in sublist],
+                'FlightStatus': [item for sublist in [x[5] for x in rowed_data_list] for item in sublist],
+                'Aircraft2': [item for sublist in [x[6] for x in rowed_data_list] for item in sublist],
+                'Aircraft3': [item for sublist in [x[7] for x in rowed_data_list] for item in sublist],
+                'Aircraft': [item for sublist in [x[8] for x in rowed_data_list] for item in sublist],
+                'Counter': [item for sublist in [x[9] for x in rowed_data_list] for item in sublist],
+                'FlightDate': [item for sublist in [x[10] for x in rowed_data_list] for item in sublist],
             }
         )
         # df.to_excel(f'fids-{str(datetime.datetime.now()).split(" ")[0]}.xlsx')
         return df
     except Exception as e:
         print(f'There occured an error in the sepehr_scraper.py. {e}')
-        return None
+        get_booking_fids()
 
 
-a = get_booking_fids()
+def job():
+    token = api_token_handler()
+    df = get_booking_fids()
+    result_dict = {'FidsScraperBatchRequestItemViewModels':df.to_dict('records')}
+    for d in result_dict['FidsScraperBatchRequestItemViewModels']:
+        for k, v in d.items():
+            if v is None:
+                d[k] = ""
+    r = requests.post(url='http://192.168.115.10:8081/api/FidsScraper/CreateFidsScraperBatch',
+                      json=result_dict,
+                      headers={'Authorization': f'Bearer {token}',
+                               'Content-type': 'application/json',
+                               })
+
+
+# Schedule the job to run every 2 hours
+schedule.every(1).hours.do(job)
+
+# Schedule the job to run at 11:45 PM every day
+schedule.every().day.at("23:45").do(job)
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
