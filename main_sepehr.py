@@ -87,7 +87,7 @@ def main():
                     result_dict['responseTime'] = str(response_time).split(".")[0]
                     result_dict['errorMessage'] = f'{error_message}'
                     result_dict['fkRouteMonitoringDetail'] = row[0]["pkRouteMonitoringDetail"]
-                    r = requests.post(url='http://192.168.115.10:8083/api/RouteMonitoring/CreateRouteMonitoringResult',
+                    r = requests.post(url='http://192.168.115.10:8083/api/RouteMonitoringResult/CreateRouteMonitoringResult',
                                       json=result_dict,
                                       headers={'Authorization': f'Bearer {token}',
                                                'Content-type': 'application/json',
@@ -96,7 +96,7 @@ def main():
                     logger.error(
                         f'Scraping the route {row[0]["iataCodeOrigin"]} to {row[0]["iataCodeDestination"]} for {row[0]["monitoringDays"]} days(day) with interval of {row[0]["interval"]} minutes was unsuccessful.')
                     error_message = 'Error in Scraper'
-                    r = requests.post(url='http://192.168.115.10:8081/api/RouteMonitoring/CreateRouteMonitoringResult',
+                    r = requests.post(url='http://192.168.115.10:8083/api/RouteMonitoringResult/CreateRouteMonitoringResult',
                                       json={'createRouteMonitoringResultRequestItemViewModels': [{}],
                                             'requestTime': str(request_time).split(".")[0],
                                             'responseTime': str(response_time).split(".")[0],

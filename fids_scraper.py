@@ -218,7 +218,7 @@ def job():
 # schedule.every(1).hours.do(job)
 
 # Schedule the job to run at 11:45 PM every day
-schedule.every().day.at("23:40").do(job)
+schedule.every().day.at("09:59").do(job)
 
 while True:
     schedule.run_pending()
