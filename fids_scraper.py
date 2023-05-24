@@ -1,3 +1,4 @@
+import datetime
 import os
 import json
 import schedule
@@ -6,6 +7,7 @@ from datetime import datetime as dt
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 import requests
 from selenium.webdriver.common.action_chains import ActionChains
 
@@ -44,73 +46,6 @@ def api_token_handler():
     return token
 
 
-def tab_scrapper(driver, tab):
-    flight_day = []
-    airline = []
-    flight_number = []
-    flight_origin = []
-    flight_dest = []
-    flight_status = []
-    aircraft2 = []
-    aircraft3 = []
-    aircraft = []
-    counter = []
-    flight_date = []
-    row_xpath = f'//div[@id="{tab}"]//tr[@class="status-default"]'
-    flights_len = len(driver.find_elements(By.XPATH, row_xpath))
-    for i in range(1, flights_len + 1):
-        try:
-            elem1 = driver.find_element(By.XPATH, row_xpath + f'[{i}]')
-            ActionChains(driver).move_to_element(elem1).perform()
-            flight_day.append(driver.find_element(By.XPATH, f'//div[@id="{tab}"]//tr[{i}]/td[@class="cell-day"]').text)
-            airline.append(driver.find_element(By.XPATH, f'//div[@id="{tab}"]//tr[{i}]/td[@class="cell-airline"]').text)
-            flight_number.append(
-                driver.find_element(By.XPATH, f'//div[@id="{tab}"]//tr[{i}]/td[@class="cell-fno"]').text)
-            try:
-                flight_origin.append(
-                    driver.find_element(By.XPATH, f'//div[@id="{tab}"]//tr[{i}]/td[@class="cell-orig"]').text)
-                flight_dest.append(None)
-            except:
-                flight_origin.append(None)
-                flight_dest.append(
-                    driver.find_element(By.XPATH, f'//div[@id="{tab}"]//tr[{i}]/td[@class="cell-dest"]').text)
-            flight_status.append(
-                driver.find_element(By.XPATH, f'//div[@id="{tab}"]//tr[{i}]/td[@class="cell-status"]').text)
-            try:
-                aircraft2.append(
-                    driver.find_element(By.XPATH, f'//div[@id="{tab}"]//tr[{i}]/td[@class="cell-aircraft2"]').text)
-                aircraft3.append(
-                    driver.find_element(By.XPATH, f'//div[@id="{tab}"]//tr[{i}]/td[@class="cell-aircraft3"]').text)
-            except:
-                aircraft2.append(None)
-                aircraft3.append(None)
-            aircraft.append(
-                driver.find_element(By.XPATH, f'//div[@id="{tab}"]//tr[{i}]/td[@class="cell-aircraft"]').text)
-            try:
-                counter.append(
-                    driver.find_element(By.XPATH, f'//div[@id="{tab}"]//tr[{i}]/td[@class="cell-counter"]').text)
-            except:
-                counter.append(None)
-            flight_date.append(
-                driver.find_element(By.XPATH, f'//div[@id="{tab}"]//tr[{i}]/td[@class="cell-date"]').text)
-        except:
-            continue
-    return [flight_day, airline, flight_number, flight_origin, flight_dest, flight_status, aircraft, aircraft2,
-            aircraft3, counter, flight_date]
-
-
-def in_out_flights_scrapper(driver, xpath):
-    tab_xpath = f'//div[@class="tab"]/button'
-    tabs_len = len(driver.find_elements(By.XPATH, xpath))
-    tabs_list = ['input', 'output', 'internal', 'external']
-    data = []
-    for i in range(1, tabs_len + 1):
-        tab = tabs_list[i - 1]
-        elem1 = driver.find_element(By.XPATH, tab_xpath + f'[{i}]')
-        ActionChains(driver).move_to_element(elem1).click(elem1).perform()
-        data.append(tab_scrapper(driver, tab))
-    return data
-
 
 def get_booking_fids():
     try:
@@ -122,77 +57,168 @@ def get_booking_fids():
         driver = webdriver.Chrome("C:\Project\Web Scraping/chromedriver", chrome_options=options)
         driver.get(url=url)
 
-        airports_len = len(driver.find_elements(By.XPATH, '//li[@class=""]'))
-        data_list = []
+        df = pd.DataFrame()
+        airports_len = len(driver.find_elements(By.XPATH, '(//ul[@class="nav navbar-nav "]/li)'))
         airport = []
-        for i in range(airports_len + 1):
-            if i == 0:
-                elem1 = driver.find_element(By.XPATH, f'//li[@class="active"]')
-                airport.append(elem1.text)
-                data_list.append(in_out_flights_scrapper(driver, f'//div[@class="tab"]/button'))
-            else:
-                elem1 = driver.find_element(By.XPATH, f'//li[@class=""][{i}]')
-                airport.append(elem1.text)
-                ActionChains(driver).move_to_element(elem1).click(elem1).perform()
-                data_list.append(in_out_flights_scrapper(driver, f'//div[@class="tab"]/button'))
+        for i in range(1, airports_len + 1):
+            airport = []
+            # ActionChains(driver).move_to_element(driver.find_element(By.XPATH, f'(//ul[@class="nav navbar-nav "]/li)[{i}]')).perform()
+            driver.find_element(By.XPATH, f'(//ul[@class="nav navbar-nav "]/li)[{i}]').click()
+            elem1 = driver.find_element(By.XPATH, f'(//ul[@class="nav navbar-nav "]/li)[{i}]')
+            airport.append(elem1.text)
 
-        airport_name_list = []
-        for idx, airport1 in enumerate(data_list):
-            for tab1 in airport1:
-                flights1 = len(tab1[0])
-                airport_name_list.append([airport[idx]] * flights1)
-
-        rowed_data_list = []
-        for x in data_list:
-            for y in range(4):
+            flight_day = []
+            airline = []
+            flight_number = []
+            flight_origin = []
+            flight_dest = []
+            flight_status = []
+            aircraft2 = []
+            aircraft3 = []
+            aircraft = []
+            counter = []
+            flight_date = []
+            for var2 in range(1, 5):
                 try:
-                    rowed_data_list.append(x[y])
+                    # clicking on each tab
+                    elem2 = driver.find_element(By.XPATH, f'(//div[@class="tab"]/button)[{var2}]')
+                    # in_out_internal_external_list.append(elem2.text)
+                    elem2.click()
+
+
+                    len_flights = len(driver.find_elements(By.XPATH, '(//tr[@class="status-default"])'))
+                    # click on each row
+                    for var3 in range(1, len_flights + 1):
+                        try:
+                            elem3 = driver.find_element(By.XPATH, f'(//tr[@class="status-default"])[{var3}]')
+                            ActionChains(driver).move_to_element(elem3).click().perform()
+
+                            try:
+                                flight_day.append(
+                                    driver.find_element(By.XPATH, f'(//tr[@class="status-default"])[{var3}]/'
+                                                                  f'td[@class="cell-day"]').text)
+                            except:
+                                flight_day.append('')
+                            try:
+                                airline.append(driver.find_element(By.XPATH, f'(//tr[@class="status-default"])[{var3}]/'
+                                                                             f'td[@class="cell-airline"]').text)
+                            except:
+                                airline.append('')
+                            try:
+                                flight_number.append(
+                                    driver.find_element(By.XPATH, f'(//tr[@class="status-default"])[{var3}]/'
+                                                                  f'td[@class="cell-fno"]').text)
+                            except:
+                                flight_number.append('')
+                            try:
+                                flight_origin.append(
+                                    driver.find_element(By.XPATH, f'(//tr[@class="status-default"])[{var3}]/'
+                                                                  f'td[@class="cell-orig"]').text)
+                            except:
+                                flight_origin.append('')
+                            try:
+                                flight_dest.append(
+                                    driver.find_element(By.XPATH, f'(//tr[@class="status-default"])[{var3}]/'
+                                                                  f'td[@class="cell-dest"]').text)
+                            except:
+                                flight_dest.append('')
+                            try:
+                                flight_status.append(
+                                    driver.find_element(By.XPATH, f'(//tr[@class="status-default"])[{var3}]/'
+                                                                  f'td[@class="cell-status"]').text)
+                            except:
+                                flight_status.append('')
+                            try:
+                                aircraft2.append(
+                                    driver.find_element(By.XPATH, f'(//tr[@class="status-default"])[{var3}]/'
+                                                                  f'td[@class="cell-aircraft2"]').text)
+                            except:
+                                aircraft2.append('')
+                            try:
+                                aircraft3.append(
+                                    driver.find_element(By.XPATH, f'(//tr[@class="status-default"])[{var3}]/'
+                                                                  f'td[@class="cell-aircraft3"]').text)
+                            except:
+                                aircraft3.append('')
+                            try:
+                                aircraft.append(
+                                    driver.find_element(By.XPATH, f'(//tr[@class="status-default"])[{var3}]/'
+                                                                  f'td[@class="cell-aircraft"]').text)
+                            except:
+                                aircraft.append('')
+                            try:
+                                counter.append(driver.find_element(By.XPATH, f'(//tr[@class="status-default"])[{var3}]/'
+                                                                             f'td[@class="cell-counter"]').text)
+                            except:
+                                counter.append('')
+                            try:
+                                flight_date.append(
+                                    driver.find_element(By.XPATH, f'(//tr[@class="status-default"])[{var3}]/'
+                                                                  f'td[@class="cell-date"]').text)
+                            except:
+                                flight_date.append('')
+                        except:
+                            continue
+
                 except:
                     continue
-
-        df = pd.DataFrame(
-            {
-                'Airport': [item for sublist in [x for x in airport_name_list] for item in sublist],
-                'FlightDay': [item for sublist in [x[0] for x in rowed_data_list] for item in sublist],
-                'Airline': [item for sublist in [x[1] for x in rowed_data_list] for item in sublist],
-                'FlightNumber': [item for sublist in [x[2] for x in rowed_data_list] for item in sublist],
-                'FlightOrigin': [item for sublist in [x[3] for x in rowed_data_list] for item in sublist],
-                'FlightDest': [item for sublist in [x[4] for x in rowed_data_list] for item in sublist],
-                'FlightStatus': [item for sublist in [x[5] for x in rowed_data_list] for item in sublist],
-                'Aircraft2': [item for sublist in [x[6] for x in rowed_data_list] for item in sublist],
-                'Aircraft3': [item for sublist in [x[7] for x in rowed_data_list] for item in sublist],
-                'Aircraft': [item for sublist in [x[8] for x in rowed_data_list] for item in sublist],
-                'Counter': [item for sublist in [x[9] for x in rowed_data_list] for item in sublist],
-                'FlightDate': [item for sublist in [x[10] for x in rowed_data_list] for item in sublist],
+            df = pd.DataFrame()
+            df = pd.DataFrame(
+                {
+                    'Airport': airport * len(flight_day),
+                    'FlightDay': flight_day,
+                    'Airline': airline,
+                    'FlightNumber': flight_number,
+                    'FlightOrigin': flight_origin,
+                    'FlightDest': flight_dest,
+                    'FlightStatus': flight_status,
+                    'Aircraft2': aircraft2,
+                    'Aircraft3': aircraft3,
+                    'Aircraft': aircraft,
+                    'Counter': counter,
+                    'FlightDate': flight_date,
+                }
+            )
+            miladi_shamsi_dict = {
+                "Saturday": "شنبه",
+                "Sunday": "یکشنبه",
+                "Monday": "دو شنبه",
+                "Tuesday": "سه شنبه",
+                "Wednesday": "چهار شنبه",
+                "Thursday": "پنج شنبه",
+                "Friday": "جمعه"
             }
-        )
-        # df.to_excel(f'fids-{str(datetime.datetime.now()).split(" ")[0]}.xlsx')
-        return df
+            token = api_token_handler()
+            today = miladi_shamsi_dict[str(datetime.datetime.now().strftime('%A'))]
+            result_dict = df.to_dict('records')
+            result_dict_final = [d1 for d1 in result_dict if today in d1["FlightDay"]]
+
+            result_dict = {'FidsScraperBatchRequestItemViewModels': result_dict_final}
+            for d in result_dict['FidsScraperBatchRequestItemViewModels']:
+                for k, v in d.items():
+                    if v is None:
+                        d[k] = ""
+
+            r = requests.post(url='http://192.168.115.10:8081/api/FidsScraper/CreateFidsScraperBatch',
+                              json=result_dict,
+                              headers={'Authorization': f'Bearer {token}',
+                                       'Content-type': 'application/json',
+                                       })
     except Exception as e:
+        driver.close()
         print(f'There occured an error in the sepehr_scraper.py. {e}')
         get_booking_fids()
 
 
 def job():
-    token = api_token_handler()
-    df = get_booking_fids()
-    result_dict = {'FidsScraperBatchRequestItemViewModels':df.to_dict('records')}
-    for d in result_dict['FidsScraperBatchRequestItemViewModels']:
-        for k, v in d.items():
-            if v is None:
-                d[k] = ""
-    r = requests.post(url='http://192.168.115.10:8081/api/FidsScraper/CreateFidsScraperBatch',
-                      json=result_dict,
-                      headers={'Authorization': f'Bearer {token}',
-                               'Content-type': 'application/json',
-                               })
+    get_booking_fids()
 
 
 # Schedule the job to run every 2 hours
-schedule.every(1).hours.do(job)
+# schedule.every(1).hours.do(job)
 
 # Schedule the job to run at 11:45 PM every day
-schedule.every().day.at("23:45").do(job)
+schedule.every().day.at("23:40").do(job)
 
 while True:
     schedule.run_pending()
