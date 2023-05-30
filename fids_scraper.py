@@ -63,8 +63,10 @@ def get_booking_fids():
         if airports_len + 1 > last_run_num:
             for var1 in range(last_run_num, airports_len + 1):
                 airport = []
-                # ActionChains(driver).move_to_element(driver.find_element(By.XPATH, f'(//ul[@class="nav navbar-nav "]/li)[{i}]')).perform()
-                driver.find_element(By.XPATH, f'(//ul[@class="nav navbar-nav "]/li)[{var1}]').click()
+                try:
+                    driver.find_element(By.XPATH, f'(//ul[@class="nav navbar-nav "]/li)[{var1}]').click()
+                except:
+                    continue
                 elem1 = driver.find_element(By.XPATH, f'(//ul[@class="nav navbar-nav "]/li)[{var1}]')
                 airport.append(elem1.text)
 
@@ -187,7 +189,6 @@ def get_booking_fids():
                     "Monday": "دو شنبه",
                     "Tuesday": "سه شنبه",
                     "Wednesday": "چهار شنبه",
-                    "Wednesday": "چهارشنبه",
                     "Thursday": "پنجشنبه",
                     "Friday": "جمعه"
                 }
@@ -207,6 +208,7 @@ def get_booking_fids():
                                   headers={'Authorization': f'Bearer {token}',
                                            'Content-type': 'application/json',
                                            })
+                print(elem1.text)
         else:
             driver.close()
             get_booking_fids()
@@ -223,8 +225,7 @@ def get_booking_fids():
         get_booking_fids()
 
 
-
 while True:
-    if dt.now().hour == 8 and dt.now().minute == 43:
+    if dt.now().hour == 13 and dt.now().minute == 39:
         last_run_num = 1
         get_booking_fids()
