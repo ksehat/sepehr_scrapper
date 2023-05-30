@@ -63,6 +63,7 @@ def get_booking_fids():
         if airports_len + 1 > last_run_num:
             for var1 in range(last_run_num, airports_len + 1):
                 airport = []
+                time.sleep(5)
                 try:
                     driver.find_element(By.XPATH, f'(//ul[@class="nav navbar-nav "]/li)[{var1}]').click()
                 except:
@@ -226,6 +227,6 @@ def get_booking_fids():
 
 
 while True:
-    if dt.now().hour == 13 and dt.now().minute == 39:
-        last_run_num = 1
+    if dt.now().hour == 15 and dt.now().minute == 11:
+        last_run_num = 30
         get_booking_fids()
