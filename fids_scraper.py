@@ -212,7 +212,7 @@ def get_booking_fids():
                 #                            })
 
                 # Connect to the MongoDB server
-                client = MongoClient('mongodb://localhost:27017/')
+                client = MongoClient('mongodb://192.168.115.17:27017/')
 
                 # Get the database and collection
                 db = client['fids_DB']
