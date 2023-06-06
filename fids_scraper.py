@@ -7,9 +7,9 @@ from datetime import datetime as dt
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 import requests
 from selenium.webdriver.common.action_chains import ActionChains
+from pymongo import MongoClient
 
 
 def call_login_token():
@@ -54,7 +54,7 @@ def get_booking_fids():
         options.add_argument('--ignore-certificate-errors')
         options.add_argument('--incognito')
         # options.add_argument('--headless')
-        driver = webdriver.Chrome("C:\Project\Web Scraping/chromedriver", chrome_options=options)
+        driver = webdriver.Chrome("C:\Project\Web Scraping/chromedriver", options=options)
         try:
             driver.get(url=url)
         except:
@@ -204,11 +204,21 @@ def get_booking_fids():
                         if v is None:
                             d[k] = ""
 
-                r = requests.post(url='http://192.168.115.10:8081/api/FidsScraper/CreateFidsScraperBatch',
-                                  json=result_dict,
-                                  headers={'Authorization': f'Bearer {token}',
-                                           'Content-type': 'application/json',
-                                           })
+                # r = requests.post(url='http://192.168.115.10:8081/api/FidsScraper/CreateFidsScraperBatch',
+                #                   json=result_dict,
+                #                   headers={'Authorization': f'Bearer {token}',
+                #                            'Content-type': 'application/json',
+                #                            })
+
+                # Connect to the MongoDB server
+                client = MongoClient('mongodb://localhost:27017/')
+
+                # Get the database and collection
+                db = client['fids_DB']
+                collection = db['fids']
+
+                # Insert a document
+                collection.insert_one(result_dict_final)
                 print(elem1.text)
         else:
             driver.close()
@@ -227,6 +237,6 @@ def get_booking_fids():
 
 
 while True:
-    if dt.now().hour == 15 and dt.now().minute == 11:
-        last_run_num = 30
+    if dt.now().hour == 8 and dt.now().minute == 26:
+        last_run_num = 1
         get_booking_fids()
