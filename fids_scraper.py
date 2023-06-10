@@ -212,7 +212,15 @@ def get_booking_fids():
                 #                            })
 
                 # Connect to the MongoDB server
-                client = MongoClient('mongodb://192.168.115.17:27017/')
+                MONGODB_HOST = '192.168.115.17'
+                MONGODB_PORT = 27017
+                MONGODB_USER = 'kanan'
+                MONGODB_PASS = '123456'
+                MONGODB_DB = 'fids_DB'
+                client = MongoClient(MONGODB_HOST, MONGODB_PORT,
+                                     username=MONGODB_USER,
+                                     password=MONGODB_PASS,
+                                     authSource=MONGODB_DB)
 
                 # Get the database and collection
                 db = client['fids_DB']
@@ -239,6 +247,6 @@ def get_booking_fids():
 
 
 while True:
-    if dt.now().hour == 22 and dt.now().minute == 55:
+    if dt.now().hour == 23 and dt.now().minute == 15:
         last_run_num = 1
         get_booking_fids()
