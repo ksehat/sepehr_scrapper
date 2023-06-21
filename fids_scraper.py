@@ -180,7 +180,7 @@ def get_booking_fids():
                         'Aircraft2': aircraft2,
                         'Aircraft3': aircraft3,
                         'Aircraft': aircraft,
-                        'Counter': counter,
+                        'Counters': counter,
                         'FlightDate': flight_date,
                         'Scrape_date':datetime.datetime.now()
                     }
