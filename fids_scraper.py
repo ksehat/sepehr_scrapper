@@ -233,6 +233,7 @@ def get_booking_fids():
         else:
             driver.close()
             get_booking_fids()
+
     except Exception as e:
         try:
             driver.close()
