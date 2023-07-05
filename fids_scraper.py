@@ -248,6 +248,6 @@ def get_booking_fids():
 
 
 while True:
-    if dt.now().hour == 23 and dt.now().minute == 15:
+    if (dt.now().hour == 23 and dt.now().minute == 15) or (dt.now().hour == 3 and dt.now().minute == 0) or (dt.now().hour == 11 and dt.now().minute == 0):
         last_run_num = 1
         get_booking_fids()
