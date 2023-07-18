@@ -168,10 +168,13 @@ def get_booking_fids():
                     except:
                         continue
                 df = pd.DataFrame()
+                flight_day_list = [x3.rsplit(' ',maxsplit=1)[0] for x3 in flight_day]
+                flight_hour_list = [x3.rsplit(' ',maxsplit=1)[1] for x3 in flight_day]
                 df = pd.DataFrame(
                     {
                         'Airport': airport * len(flight_day),
-                        'FlightDay': flight_day,
+                        'FlightDay': flight_day_list,
+                        'FlightHour': flight_hour_list,
                         'Airline': airline,
                         'FlightNumber': flight_number,
                         'FlightOrigin': flight_origin,
@@ -185,22 +188,11 @@ def get_booking_fids():
                         'Scrape_date': datetime.datetime.now()
                     }
                 )
-                miladi_shamsi_dict = {
-                    "Saturday": "شنبه",
-                    "Sunday": "یکشنبه",
-                    "Monday": "دو شنبه",
-                    "Tuesday": "سه شنبه",
-                    "Wednesday": "چهار شنبه",
-                    "Thursday": "پنجشنبه",
-                    "Friday": "جمعه"
-                }
                 token = api_token_handler()
-                today = miladi_shamsi_dict[str(datetime.datetime.now().strftime('%A'))]
                 result_dict = df.to_dict('records')
-                result_dict_final = [d1 for d1 in result_dict if today in d1["FlightDay"]]
 
-                result_dict = {'FidsScraperBatchRequestItemViewModels': result_dict_final}
-                for d in result_dict['FidsScraperBatchRequestItemViewModels']:
+                result_dict_final = {'FidsScraperBatchRequestItemViewModels': result_dict}
+                for d in result_dict_final['FidsScraperBatchRequestItemViewModels']:
                     for k, v in d.items():
                         if v is None:
                             d[k] = ""
@@ -227,8 +219,8 @@ def get_booking_fids():
                 collection = db['fids']
 
                 # Insert a document
-                if result_dict_final:
-                    collection.insert_many(result_dict_final)
+                if result_dict_final['FidsScraperBatchRequestItemViewModels']:
+                    collection.insert_many(result_dict_final['FidsScraperBatchRequestItemViewModels'])
                 print(elem1.text)
         else:
             driver.close()
