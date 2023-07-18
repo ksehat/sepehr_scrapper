@@ -1,8 +1,6 @@
 import datetime
 import os
 import json
-import schedule
-import time
 from datetime import datetime as dt
 import pandas as pd
 from selenium import webdriver
@@ -12,6 +10,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from pymongo import MongoClient
+from persiantools import digits
 
 
 def call_login_token():
@@ -53,7 +52,8 @@ class Flight724Scrapper:
         self.orig = orig
         self.dest = dest
         self.days_num = days_num
-        self.day_num = 0
+        self.day_num_text = None
+        self.day_num = 1
 
     def get_flight724_route(self):
         try:
@@ -70,15 +70,26 @@ class Flight724Scrapper:
             driver.find_element(By.XPATH, '//*[@id="search_auto_from"]').send_keys(self.orig)
             driver.find_element(By.XPATH, '//*[@id="search_auto_to"]').send_keys(self.dest)
             driver.find_element(By.XPATH, '//*[@id="departing"]').click()
-            driver.find_element(By.XPATH,
-                                '//a[contains(@class, "weekday") and not(contains(@class, "invalid"))]').click()
+            if self.day_num_text:
+                year_temp, month_temp, day_temp = [int(x) for x in self.day_num_text.split('/')]
+                driver.find_element(By.XPATH, '/html/body/div[7]/table/tbody/tr[1]/td/a[2]').click()
+                driver.find_element(By.XPATH, f'//a[contains(text(), "{digits.en_to_fa(str(year_temp))}")]').click()
+                driver.find_element(By.XPATH, '/html/body/div[7]/table/tbody/tr[1]/td/a[1]').click()
+                driver.find_element(By.XPATH, f'//*[@id="undefinedmonthYearPicker"]/a[{month_temp}]').click()
+                driver.find_element(By.XPATH,
+                                    f'//a[contains(@class, "weekday") and not(contains(@class, "invalid")) and contains(text(), "{digits.en_to_fa(str(day_temp))}")]').click()
+                self.day_num_text = None
+            else:
+                driver.find_element(By.XPATH,
+                                    '//a[contains(@class, "weekday") and not(contains(@class, "invalid"))]').click()
             driver.find_element(By.XPATH, '//*[@id="search_submit"]').click()
 
-            for day_num in range(self.day_num, self.days_num):
+            for day_num in range(self.day_num, self.days_num + 1):
+                self.day_num_text = driver.find_element(By.XPATH, '//*[@id="r_city_date"]/span').text
                 if day_num > 0:
                     WebDriverWait(driver, 3).until(
-                        EC.presence_of_element_located((By.XPATH, f'//*[@id="search_result_from"]/div[2]/a[2]')))
-                    driver.find_element(By.XPATH, '//*[@id="search_result_from"]/div[2]/a[2]').click()
+                        EC.presence_of_element_located((By.XPATH, '//a[contains(text(), "روز بعد")]')))
+                    driver.find_element(By.XPATH, '//a[contains(text(), "روز بعد")]').click()
                 try:
                     WebDriverWait(driver, 3).until(
                         EC.presence_of_element_located(
@@ -89,6 +100,8 @@ class Flight724Scrapper:
                     else:
                         raise 1
 
+                orig_list = []
+                dest_list = []
                 price_list = []
                 type_list = []
                 airline_list = []
@@ -100,6 +113,8 @@ class Flight724Scrapper:
                 for n1 in range(1, len(driver.find_elements(By.XPATH, '//div[@class="resu "]')) + 1):
                     elem1 = driver.find_element(By.XPATH, f'//div[@class="resu "][{n1}]')
                     ActionChains(driver).move_to_element(elem1).perform()
+                    orig_list.append(self.orig)
+                    dest_list.append(self.dest)
                     try:
                         price_list.append(
                             driver.find_element(By.XPATH, f'//div[@class="resu "][{n1}]/div[@class="price"]/span').text)
@@ -155,6 +170,8 @@ class Flight724Scrapper:
                     ActionChains(driver).move_to_element(elem11).perform()
 
                 df = pd.DataFrame({
+                    'orig': orig_list,
+                    'dest': dest_list,
                     'flight_date': [flight_date] * len(extra_info),
                     'price_list': price_list,
                     'type_list': type_list,
@@ -185,23 +202,9 @@ class Flight724Scrapper:
 
                 # Insert a document
                 if result_dict:
-                    try:
-                        # This is necessary to prevent race condition while multiple threads are writing into database
-                        session = client.start_session()
-                        session.start_transaction()
-                        collection.insert_many(result_dict, session=session)
-                        session.commit_transaction()
-                    except:
-                        session.abort_transaction()
-                        self.day_num = day_num
-                        try:
-                            driver.close()
-                        except:
-                            pass
-                        print(f'race in database writing is occured.')
-                        self.get_flight724_route()
+                    collection.insert_many(result_dict)
         except Exception as e:
-            self.day_num = day_num
+            self.day_num = day_num - 1
             try:
                 driver.close()
             except:
