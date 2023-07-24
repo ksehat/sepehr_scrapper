@@ -181,7 +181,7 @@ def get_booking_fids():
                         'FlightDest': flight_dest,
                         'FlightStatus': flight_status,
                         'Aircraft2': aircraft2,
-                        'Aircraft3': aircraft3,
+                        'ArrivalTime': aircraft3,
                         'Aircraft': aircraft,
                         'Counters': counter,
                         'FlightDate': flight_date,
