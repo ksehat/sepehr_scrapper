@@ -3,6 +3,7 @@ import os
 import json
 from datetime import datetime as dt
 import pandas as pd
+import pyodbc
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import requests
@@ -199,10 +200,23 @@ class Flight724Scrapper:
                 # Get the database and collection
                 db = client['flight724_DB']
                 collection = db['flight724']
-
                 # Insert a document
                 if result_dict:
                     collection.insert_many(result_dict)
+
+                sql_server = '192.168.40.57'
+                sql_database = 'fids_mongodb'
+                sql_username = 'k.sehat'
+                sql_password = 'K@123456'
+                cnxn = pyodbc.connect(driver='{SQL Server}',
+                                      server=sql_server,
+                                      database=sql_database,
+                                      uid=sql_username, pwd=sql_password)
+                cursor = cnxn.cursor()
+                insert_stmt = "INSERT INTO FIDS_JSON (jsoncontent,SiteName) VALUES (?,?)"
+                cursor.execute(insert_stmt, ('kanan3', 'sitename'))
+                cnxn.commit()
+                cnxn.close()
         except Exception as e:
             self.day_num = day_num - 1
             try:
