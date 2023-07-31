@@ -54,7 +54,8 @@ class Flight724Scrapper:
         self.dest = dest
         self.days_num = days_num
         self.day_num_text = None
-        self.day_num = 1
+        self.day_num = 0
+        self.error_exit = 0
 
     def get_flight724_route(self):
         try:
@@ -62,7 +63,7 @@ class Flight724Scrapper:
             options = webdriver.ChromeOptions()
             options.add_argument('--ignore-certificate-errors')
             options.add_argument('--incognito')
-            # options.add_argument('--headless')
+            options.add_argument('--headless')
             driver = webdriver.Chrome("C:\Project\Web Scraping/chromedriver", options=options)
             try:
                 driver.get(url=url)
@@ -79,19 +80,18 @@ class Flight724Scrapper:
                 driver.find_element(By.XPATH, f'//*[@id="undefinedmonthYearPicker"]/a[{month_temp}]').click()
                 driver.find_element(By.XPATH,
                                     f'//a[contains(@class, "weekday") and not(contains(@class, "invalid")) and contains(text(), "{digits.en_to_fa(str(day_temp))}")]').click()
-                self.day_num_text = None
             else:
                 driver.find_element(By.XPATH,
                                     '//a[contains(@class, "weekday") and not(contains(@class, "invalid"))]').click()
             driver.find_element(By.XPATH, '//*[@id="search_submit"]').click()
 
-            for day_num in range(self.day_num, self.days_num + 1):
-                self.day_num_text = driver.find_element(By.XPATH, '//*[@id="r_city_date"]/span').text
-                if day_num > 0:
+            for self.day_num in range(self.day_num, self.days_num):
+                if self.day_num > 0 and not self.error_exit:
                     WebDriverWait(driver, 3).until(
                         EC.presence_of_element_located((By.XPATH, '//a[contains(text(), "روز بعد")]')))
                     driver.find_element(By.XPATH, '//a[contains(text(), "روز بعد")]').click()
                 try:
+                    self.error_exit = 0
                     WebDriverWait(driver, 3).until(
                         EC.presence_of_element_located(
                             (By.XPATH, f'//div[@class="resu "]')))
@@ -101,9 +101,13 @@ class Flight724Scrapper:
                     else:
                         raise 1
 
+                self.day_num_text = driver.find_element(By.XPATH, '//*[@id="r_city_date"]/span').text
+
                 orig_list = []
                 dest_list = []
+                days_num_list = []
                 price_list = []
+                class_icon_list = []
                 type_list = []
                 airline_list = []
                 datetime_list = []
@@ -116,11 +120,20 @@ class Flight724Scrapper:
                     ActionChains(driver).move_to_element(elem1).perform()
                     orig_list.append(self.orig)
                     dest_list.append(self.dest)
+                    days_num_list.append(self.days_num)
                     try:
                         price_list.append(
                             driver.find_element(By.XPATH, f'//div[@class="resu "][{n1}]/div[@class="price"]/span').text)
                     except:
                         price_list.append(None)
+
+                    try:
+                        class_icon_list.append(
+                            driver.find_element(By.XPATH,
+                                                f'//div[@class="resu "][{n1}]/div[1]/div').text)
+                    except:
+                        class_icon_list.append(None)
+
                     try:
                         type_list.append(
                             driver.find_element(By.XPATH, f'//div[@class="resu "][{n1}]/div[@class="code"]/span').text)
@@ -173,13 +186,15 @@ class Flight724Scrapper:
                 df = pd.DataFrame({
                     'orig': orig_list,
                     'dest': dest_list,
+                    'dur': days_num_list,
+                    'class': class_icon_list,
                     'flight_date': [flight_date] * len(extra_info),
-                    'price_list': price_list,
-                    'type_list': type_list,
-                    'datetime_list': datetime_list,
-                    'cap_list': cap_list,
-                    'airline_list': airline_list,
-                    'class_list': class_list,
+                    'price': price_list,
+                    'type': type_list,
+                    'datetime': datetime_list,
+                    'capacity': cap_list,
+                    'airline': airline_list,
+                    'airplane_class': class_list,
                     'extra_info': extra_info,
                     'scrap_date': [str(datetime.datetime.now())] * len(extra_info)
                 })
@@ -214,14 +229,17 @@ class Flight724Scrapper:
                                       uid=sql_username, pwd=sql_password)
                 cursor = cnxn.cursor()
                 insert_stmt = "INSERT INTO FIDS_JSON (jsoncontent,SiteName) VALUES (?,?)"
-                cursor.execute(insert_stmt, ('kanan3', 'sitename'))
+                cursor.execute(insert_stmt, (str(df.to_dict()), '724'))
                 cnxn.commit()
                 cnxn.close()
         except Exception as e:
-            self.day_num = day_num - 1
             try:
                 driver.close()
             except:
                 pass
-            print(f'There occured an error in the sepehr_scraper.py. {e}')
+            self.error_exit = 1
             self.get_flight724_route()
+
+
+# f_scrapper = Flight724Scrapper('THR', 'MHD', 3)
+# f_scrapper.get_flight724_route()
