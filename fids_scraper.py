@@ -10,6 +10,7 @@ from selenium.webdriver.common.by import By
 import requests
 from selenium.webdriver.common.action_chains import ActionChains
 from pymongo import MongoClient
+import pyodbc
 
 
 def call_login_token():
@@ -188,7 +189,7 @@ def get_booking_fids():
                         'Scrape_date': datetime.datetime.now()
                     }
                 )
-                token = api_token_handler()
+                # token = api_token_handler()
                 result_dict = df.to_dict('records')
 
                 result_dict_final = {'FidsScraperBatchRequestItemViewModels': result_dict}
@@ -213,14 +214,32 @@ def get_booking_fids():
                                      username=MONGODB_USER,
                                      password=MONGODB_PASS,
                                      authSource=MONGODB_DB)
-
-                # Get the database and collection
+                # Get the database and collection of MongoDB
                 db = client['fids_DB']
-                collection = db['fids']
+                collection = db['fids2']
+
+                sql_server = '192.168.40.57'
+                sql_database = 'fids_mongodb'
+                sql_username = 'k.sehat'
+                sql_password = 'K@123456'
+                cnxn = pyodbc.connect(driver='{SQL Server}',
+                                      server=sql_server,
+                                      database=sql_database,
+                                      uid=sql_username, pwd=sql_password)
+                cursor = cnxn.cursor()
+                insert_stmt = "INSERT INTO FIDS_JSON (jsoncontent,SiteName) VALUES (?,?)"
 
                 # Insert a document
                 if result_dict_final['FidsScraperBatchRequestItemViewModels']:
+                    #Import to MongoDB
                     collection.insert_many(result_dict_final['FidsScraperBatchRequestItemViewModels'])
+                    #Import to SQL
+                    try:
+                        cursor.execute(insert_stmt, (str(df.to_dict()), 'FIDS'))
+                        cnxn.commit()
+                        cnxn.close()
+                    except:
+                        print('data cannot be inserted to SQL.')
                 print(elem1.text)
         else:
             driver.close()
@@ -239,6 +258,8 @@ def get_booking_fids():
         get_booking_fids()
 
 
+last_run_num = 1
+get_booking_fids()
 while True:
     if (dt.now().hour == 23 and dt.now().minute == 15) or (dt.now().hour == 3 and dt.now().minute == 0) or (
             dt.now().hour == 11 and dt.now().minute == 0) or (
