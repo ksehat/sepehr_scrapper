@@ -217,5 +217,5 @@ def trampoline(func, *args, **kwargs):
     return result
 
 
-f_scrapper = Flight724Scrapper('THR', 'MHD', 1)
-trampoline(f_scrapper.get_flight724_route)
+# f_scrapper = Flight724Scrapper('THR', 'MHD', 1)
+# trampoline(f_scrapper.get_flight724_route)
