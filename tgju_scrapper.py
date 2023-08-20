@@ -1,6 +1,7 @@
 import datetime
 import os
 import json
+import time
 from datetime import datetime as dt
 import pandas as pd
 import pyodbc
@@ -22,7 +23,7 @@ class TGJUScrapper:
             options = webdriver.ChromeOptions()
             options.add_argument('--ignore-certificate-errors')
             options.add_argument('--incognito')
-            # options.add_argument('--headless')
+            options.add_argument('--headless')
             driver = webdriver.Chrome("C:\Project\Web Scraping/chromedriver", options=options)
             try:
                 driver.get(url=url)
@@ -92,10 +93,12 @@ class TGJUScrapper:
                 pass
             self.get_tgju_data()
 
-
+f_scrapper = TGJUScrapper()
+f_scrapper.get_tgju_data()
 while True:
     if (dt.now().hour == 23 and dt.now().minute == 15) or (dt.now().hour == 3 and dt.now().minute == 0) or (
-            dt.now().hour == 11 and dt.now().minute == 0) or (
+            dt.now().hour == 11 and dt.now().minute == 3) or (
             dt.now().hour == 16 and dt.now().minute == 0):
         f_scrapper = TGJUScrapper()
         f_scrapper.get_tgju_data()
+        time.sleep(60) # This line is necessary to not to scrape over and over again while the time is 11:00 for example.
