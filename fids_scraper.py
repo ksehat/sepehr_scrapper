@@ -59,6 +59,10 @@ def get_booking_fids():
         try:
             driver.get(url=url)
         except:
+            try:
+                driver.close()
+            except:
+                pass
             get_booking_fids()
         airports_len = len(driver.find_elements(By.XPATH, '(//ul[@class="nav navbar-nav "]/li)'))
         if airports_len + 1 > last_run_num:
