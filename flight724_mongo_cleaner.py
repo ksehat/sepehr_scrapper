@@ -1,5 +1,7 @@
+import time
 from pymongo import MongoClient
-from datetime import datetime
+import schedule
+from bson.objectid import ObjectId
 
 
 def flight724_mongo_cleaner():
@@ -19,19 +21,38 @@ def flight724_mongo_cleaner():
 
     # Sort data by scrape_date
     data = list(flight724.find().sort('scrape_date', 1))
+    cleaned_data = list(flight724_cleaned.find().sort('scrape_date', 1))
 
     # Remove consecutive redundant documents
-    fields_to_ignore = ['_id', 'scrape_date', 'price', 'capacity', 'extra_info']
-    cleaned_data = []
-
+    fields_to_ignore = ['_id', 'scrap_date', 'price', 'capacity', 'airplane_class']
+    compare_fields = ['price', 'capacity', 'airplane_class']
+    ids_to_remove = []
     for i in range(len(data)):
-        if i == 0 or any(data[i][field] not in [d[field] for d in cleaned_data] for field in data[i] if
-                         field not in fields_to_ignore):
+        ids_to_remove.append(data[i]['_id'])
+        same_fields = [field for field in list(data[i].keys()) if field not in fields_to_ignore]
+        if len(cleaned_data) != 0:
+            for j in range(len(cleaned_data) - 1, -1, -1):
+                if all(data[i][field1] == cleaned_data[j][field1] for field1 in same_fields):
+                    if any(data[i][field] != cleaned_data[j][field] for field in compare_fields):
+                        # data[i]['_id'] = ObjectId(data[i]['_id'].binary + b' cleaned')
+                        cleaned_data.append(data[i])
+                        flight724_cleaned.insert_one(data[i])
+                        break
+                    else:
+                        break
+                elif j == 0:
+                    # data[i]['_id'] = ObjectId(data[i]['_id'].binary + b' cleaned')
+                    cleaned_data.append(data[i])
+                    flight724_cleaned.insert_one(data[i])
+        else:
+            # data[i]['_id'] = ObjectId(data[i]['_id'].binary + b' cleaned')
             cleaned_data.append(data[i])
+            flight724_cleaned.insert_one(data[i])
 
-    # Append cleaned data to flight724_cleaned collection
-    if cleaned_data:
-        flight724_cleaned.insert_many(cleaned_data)
+    # flight724.delete_many({'_id': {'$in': ids_to_remove}})
 
-    # Remove all data from flight724 collection
-    flight724.delete_many({})
+flight724_mongo_cleaner()
+schedule.every(10).minutes.do(flight724_mongo_cleaner)
+while True:
+    schedule.run_pending()
+    time.sleep(1)
