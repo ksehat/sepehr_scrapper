@@ -1,5 +1,3 @@
-import time
-
 import requests
 import json
 import pandas as pd
@@ -8,11 +6,9 @@ import threading
 
 
 def process_df(df, num_workers):
-    while True:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
+        while True:
             list(executor.map(runner, df.itertuples(index=False)))
-
-
 
 def runner(data):
     print(data)
