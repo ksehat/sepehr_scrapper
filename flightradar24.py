@@ -1,15 +1,14 @@
 import datetime
 import random
-
+import threading
 import requests
 import json
 import time
 from pymongo import MongoClient
-import schedule
 
 
-def job():
-    url = "https://api.flightradar24.com/common/v1/airport.json?code=ika"
+def job(airport):
+    url = f"https://api.flightradar24.com/common/v1/airport.json?code={airport}"
 
     payload = {}
     headers = {
@@ -37,6 +36,9 @@ def job():
 
     result_dict = result['result']['response']['airport']['pluginData']['schedule']
 
+    result_dict['airport'] = airport
+    result_dict['insert_date'] = datetime.datetime.now()
+
     # Connect to the MongoDB server
     MONGODB_HOST = '192.168.115.17'
     MONGODB_PORT = 27017
@@ -55,9 +57,21 @@ def job():
     try:
         collection.insert_one(result_dict)
     except:
+        print(f'Error. Data was not inserted to the DB.')
         pass
 
 
-while True:
-    job()
-    time.sleep(random.randint(30, 60))
+def worker(airport):
+    while True:
+        job(airport)
+        time.sleep(random.randint(30, 60))
+
+airport_list = ['ika','thr','mhd','syz','kih']
+threads = []
+for airport in airport_list:
+    t = threading.Thread(target=worker, args=(airport,))
+    t.start()
+    threads.append(t)
+
+for t in threads:
+    t.join()
