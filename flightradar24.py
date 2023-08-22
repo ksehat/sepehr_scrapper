@@ -1,3 +1,4 @@
+import copy
 import datetime
 import random
 import threading
@@ -31,34 +32,44 @@ def job(airport):
     except Exception as e:
         print(f'{e}')
         print(f'Error occured at {datetime.datetime.now()}')
-        pass
-    result = json.loads(response.text)
-
-    result_dict = result['result']['response']['airport']['pluginData']['schedule']
-
-    result_dict['airport'] = airport
-    result_dict['insert_date'] = datetime.datetime.now()
-
-    # Connect to the MongoDB server
-    MONGODB_HOST = '192.168.115.17'
-    MONGODB_PORT = 27017
-    MONGODB_USER = 'kanan'
-    MONGODB_PASS = '123456'
-    MONGODB_DB = 'flightradar24_DB'
-    client = MongoClient(MONGODB_HOST, MONGODB_PORT,
-                         username=MONGODB_USER,
-                         password=MONGODB_PASS,
-                         authSource=MONGODB_DB)
-
-    # Get the database and collection
-    db = client['flightradar24_DB']
-    collection = db['flightradar24']
-    # Insert a document
+        return True
     try:
-        collection.insert_one(result_dict)
+        result = json.loads(response.text)
+
+        result_dict = result['result']['response']['airport']['pluginData']['schedule']
+
+        result_dict['airport'] = airport
+        result_dict['insert_date'] = datetime.datetime.now()
+
+        # Connect to the MongoDB server
+        MONGODB_HOST = '192.168.115.17'
+        MONGODB_PORT = 27017
+        MONGODB_USER = 'kanan'
+        MONGODB_PASS = '123456'
+        MONGODB_DB = 'flightradar24_DB'
+        client = MongoClient(MONGODB_HOST, MONGODB_PORT,
+                             username=MONGODB_USER,
+                             password=MONGODB_PASS,
+                             authSource=MONGODB_DB)
+        db = client['flightradar24_DB']
+        collection = db['flightradar24']
+    except Exception as e:
+        print(e)
+        print('Error in the json decoder. Maybe the request was not okay and the results of the request was null')
+        return True
+
+    try:
+        collection.insert_one(copy.deepcopy(result_dict))
     except:
         print(f'Error. Data was not inserted to the DB.')
         pass
+
+    collection = db['mobile_data']
+    try:
+        collection.find_one_and_replace({'airport': airport},result_dict, upsert=True)
+    except:
+        print(f'Error. Data was not inserted to the DB.')
+        return True
 
 
 def worker(airport):
