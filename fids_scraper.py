@@ -57,7 +57,7 @@ def get_booking_fids():
         options.add_argument('--ignore-certificate-errors')
         options.add_argument('--incognito')
         # options.add_argument('--headless')
-        driver = webdriver.Chrome("C:\Project\Web Scraping/chromedriver", options=options)
+        driver = webdriver.Chrome("C:\Project\sepehr_scrapper\chromedriver-win64\chromedriver-win64/chromedriver.exe", options=options)
         try:
             driver.get(url=url)
         except:
@@ -70,7 +70,7 @@ def get_booking_fids():
         if airports_len + 1 > last_run_num:
             for var1 in range(last_run_num, airports_len + 1):
                 airport = []
-                time.sleep(random.randint(20, 50))
+                time.sleep(random.randint(20, 40))
                 try:
                     driver.find_element(By.XPATH, f'(//ul[@class="nav navbar-nav "]/li)[{var1}]').click()
                 except:
@@ -267,8 +267,9 @@ def get_booking_fids():
 last_run_num = 1
 get_booking_fids()
 while True:
-    if (dt.now().hour == 23 and dt.now().minute == random.randint(1, 20)) or (dt.now().hour == 3 and dt.now().minute == random.randint(1, 59)) or (
-            dt.now().hour == 11 and dt.now().minute == random.randint(1, 59)) or (
-            dt.now().hour == 16 and dt.now().minute == random.randint(1, 59)):
+    if (dt.now().hour == 23 and dt.now().minute == random.randint(1, 20)):
+            # or (dt.now().hour == 11 and dt.now().minute == random.randint(1, 59))\
+            # or (dt.now().hour == 16 and dt.now().minute == random.randint(1, 59)):
+            # or (dt.now().hour == 3 and dt.now().minute == random.randint(1, 59)) \
         last_run_num = 1
         get_booking_fids()
