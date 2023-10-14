@@ -8,7 +8,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from pymongo import MongoClient
 from persiantools import digits
-from memory_profiler import profile
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.proxy import Proxy, ProxyType
+
 
 
 class Flight724Scrapper:
@@ -26,8 +28,11 @@ class Flight724Scrapper:
             options = webdriver.ChromeOptions()
             options.add_argument('--ignore-certificate-errors')
             options.add_argument('--incognito')
-            # options.add_argument('--headless')
-            driver = webdriver.Chrome("chromedriver_114.exe", options=options)
+            PROXY = "127.0.0.1:65386"
+            # options.add_argument('--proxy-server=%s' % PROXY)
+            options.add_extension('C:/Users\Administrator\Desktop\Projects\sepehr_fids_scrapper\sepehr_scrapper/majdfhpaihoncoakbjgbdhglocklcgno.crx')
+            driver = webdriver.Chrome(service=Service(
+                "C:/Users\Administrator\Desktop\Projects\sepehr_fids_scrapper/chromedriver.exe"), options=options)
             try:
                 driver.get(url=url)
             except:
@@ -170,10 +175,10 @@ class Flight724Scrapper:
 
                 # Connect to the MongoDB server
                 MONGODB_HOST = '192.168.115.17'
-                MONGODB_PORT = 27017
+                MONGODB_PORT = 24048
                 MONGODB_USER = 'kanan'
                 MONGODB_PASS = '123456'
-                MONGODB_DB = 'fids_DB'
+                MONGODB_DB = 'flight724_DB'
                 client = MongoClient(MONGODB_HOST, MONGODB_PORT,
                                      username=MONGODB_USER,
                                      password=MONGODB_PASS,
@@ -186,19 +191,19 @@ class Flight724Scrapper:
                 if result_dict:
                     collection.insert_many(result_dict)
 
-                sql_server = '192.168.40.57'
-                sql_database = 'fids_mongodb'
-                sql_username = 'k.sehat'
-                sql_password = 'K@123456'
-                cnxn = pyodbc.connect(driver='{SQL Server}',
-                                      server=sql_server,
-                                      database=sql_database,
-                                      uid=sql_username, pwd=sql_password)
-                cursor = cnxn.cursor()
-                insert_stmt = "INSERT INTO FIDS_JSON (jsoncontent,SiteName) VALUES (?,?)"
-                cursor.execute(insert_stmt, (str(df.to_dict()), '724'))
-                cnxn.commit()
-                cnxn.close()
+                # sql_server = '192.168.40.57'
+                # sql_database = 'fids_mongodb'
+                # sql_username = 'k.sehat'
+                # sql_password = 'K@123456'
+                # cnxn = pyodbc.connect(driver='{SQL Server}',
+                #                       server=sql_server,
+                #                       database=sql_database,
+                #                       uid=sql_username, pwd=sql_password)
+                # cursor = cnxn.cursor()
+                # insert_stmt = "INSERT INTO FIDS_JSON (jsoncontent,SiteName) VALUES (?,?)"
+                # cursor.execute(insert_stmt, (str(df.to_dict()), '724'))
+                # cnxn.commit()
+                # cnxn.close()
             driver.close()
             return True
         except Exception as e:
@@ -215,7 +220,6 @@ def trampoline(func, *args, **kwargs):
     while not result:
         result = func(*args, **kwargs)
     return result
-
 
 # f_scrapper = Flight724Scrapper('THR', 'MHD', 1)
 # trampoline(f_scrapper.get_flight724_route)
