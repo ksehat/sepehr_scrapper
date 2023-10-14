@@ -10,6 +10,7 @@ def process_df(df, num_workers):
         while True:
             list(executor.map(runner, df.itertuples(index=False)))
 
+
 def runner(data):
     print(data)
     r = requests.post(url='http://192.168.115.17:3000/flight724', json=json.dumps(list(data)))
