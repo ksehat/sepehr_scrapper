@@ -242,7 +242,7 @@ class FidsScraper:
 
                     # Connect to the MongoDB server
                     MONGODB_HOST = '192.168.115.17'
-                    MONGODB_PORT = 27017
+                    MONGODB_PORT = 24048
                     MONGODB_USER = 'kanan'
                     MONGODB_PASS = '123456'
                     MONGODB_DB = 'fids_DB'
@@ -254,28 +254,28 @@ class FidsScraper:
                     db = client['fids_DB']
                     collection = db['fids2']
 
-                    sql_server = '192.168.40.57'
-                    sql_database = 'fids_mongodb'
-                    sql_username = 'k.sehat'
-                    sql_password = 'K@123456'
-                    cnxn = pyodbc.connect(driver='{SQL Server}',
-                                          server=sql_server,
-                                          database=sql_database,
-                                          uid=sql_username, pwd=sql_password)
-                    cursor = cnxn.cursor()
-                    insert_stmt = "INSERT INTO FIDS_JSON (jsoncontent,SiteName) VALUES (?,?)"
+                    # sql_server = '192.168.40.57'
+                    # sql_database = 'fids_mongodb'
+                    # sql_username = 'k.sehat'
+                    # sql_password = 'K@123456'
+                    # cnxn = pyodbc.connect(driver='{SQL Server}',
+                    #                       server=sql_server,
+                    #                       database=sql_database,
+                    #                       uid=sql_username, pwd=sql_password)
+                    # cursor = cnxn.cursor()
+                    # insert_stmt = "INSERT INTO FIDS_JSON (jsoncontent,SiteName) VALUES (?,?)"
 
                     # Insert a document
                     if result_dict_final['FidsScraperBatchRequestItemViewModels']:
                         # Import to MongoDB
                         collection.insert_many(result_dict_final['FidsScraperBatchRequestItemViewModels'])
                         # Import to SQL
-                        try:
-                            cursor.execute(insert_stmt, (str(df.to_dict()), 'FIDS'))
-                            cnxn.commit()
-                            cnxn.close()
-                        except:
-                            print(f'data cannot be inserted to SQL for {elem1.text}.')
+                        # try:
+                        #     cursor.execute(insert_stmt, (str(df.to_dict()), 'FIDS'))
+                        #     cnxn.commit()
+                        #     cnxn.close()
+                        # except:
+                        #     print(f'data cannot be inserted to SQL for {elem1.text}.')
 
                     self.last_run_num = var1
                     print(elem1.text)
@@ -297,8 +297,8 @@ class FidsScraper:
 
 
 if __name__ == "__main__":
-    # scraper = FidsScraper()
-    # scraper.scrape()
+    scraper = FidsScraper()
+    scraper.scrape()
 
     while True:
         if (dt.now().hour == 23 and dt.now().minute == random.randint(1, 20)):
