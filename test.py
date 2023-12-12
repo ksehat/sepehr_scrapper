@@ -1,21 +1,19 @@
+import pandas as pd
+import json
 import requests
 
-# Define proxy dict. Don't forget to put your real user and pass here as well.
-proxies = {
-  "http": "http://CUWYAETQ6JCGF3CPO09I4403NJFRQL2JEQ73Y1JCQXWEK8C6OQHLLPIXJ0EPYENX7UPDEULM7W6E0YIM:render_js=False&premium_proxy=True@proxy.scrapingbee.com:8886"
-  # 'https': 'http://kanan:8UZ8*u*p9tVNhri@unblock.oxylabs.io:60000',
+url = "http://192.168.115.17:3000/call_from_backend_to_scrap"
+
+payload = json.dumps({
+  "Orig": "THR",
+  "Dest": "MHD",
+  "date": "2023-12-06",
+  "id": 1450124852
+})
+headers = {
+  'Content-Type': 'application/json'
 }
 
-response = requests.request(
-    'GET',
-    'http://flight724.com',
-    verify=False,  # Ignore the certificate
-    proxies=proxies,
-)
+response = requests.request("POST", url, headers=headers, data=payload)
 
-# Print result page to stdout
-print(response.text)
-
-# Save returned HTML to result.html file
-# with open('result.html', 'w') as f:
-#     f.write(response.text)
+data = pd.DataFrame(json.loads(json.loads(response.content)['data']))
