@@ -1,6 +1,9 @@
-import datetime
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, Response
 import json
+from flask_caching import Cache
+from concurrent.futures import ThreadPoolExecutor
+import hashlib
+import time
 from sepehr_scraper import sepehr_scrapper
 from flight724_scrapper import Flight724Scrapper
 from alameer.alameer_scrapper import AlameerScrapper
@@ -9,30 +12,29 @@ from waitress import serve
 from concurrent.futures import ThreadPoolExecutor
 
 app1 = Flask(__name__)
-old_data = None
-
 executor = ThreadPoolExecutor()
+cache = Cache(app1, config={'CACHE_TYPE': 'simple'})
+def generate_request_hash(data):
+    hash_object = hashlib.sha256(json.dumps(data, sort_keys=True).encode())
+    return hash_object.hexdigest()
 
 @app1.route('/call_from_backend_to_scrap', methods=['POST'])
 def call_from_backend():
-    if (request.method == 'POST'):
+    if request.method == 'POST':
         data = json.loads(request.data)
-        global old_data
-        try:
-            if old_data == data:
-                return json.dumps({'Message':"Please wait. Your job is running."})
-        except:
-            pass
-        old_data = data
-        try:
-            # future = executor.submit(alameer_scrapper, data)
-            alameer_scrapper(data)
-            # TODO: Here we should use parallel for to call all website scrappers at the same time
-            old_data = None
-            return json.dumps({'Message': "ok"})
+        filtered_dict = {key: data[key] for key in ['Orig', 'Dest', 'date'] if key in data}
+        request_hash = generate_request_hash(filtered_dict)
 
-        except:
-            return {'Message': "An error occured in scraper."}
+        if cache.get(request_hash):
+            return Response(status=429)
+        cache.set(request_hash, True, timeout=900)
+        result_future = executor.submit(alameer_scrapper, data)
+        result = result_future.result()
+        return json.dumps({
+            'id': data['id'],
+            'Message': "ok",
+            'data': json.dumps(result.to_dict('records'))
+        })
 
 
 # @app1.route('/sepehr360', methods=['POST'])
@@ -68,8 +70,10 @@ def call_from_backend():
 
 
 def alameer_scrapper(data):
-    f_scrapper = AlameerScrapper(orig=data['orig'], dest=data['dest'], days_num=1, scraping_date=data['date'])
+    f_scrapper = AlameerScrapper(orig=data['Orig'], dest=data['Dest'], days_num=1, scraping_date=data['date'],
+                                 id_from_backend=data['id'])
     result = trampoline(f_scrapper.get_alameer_route)
+    return result
 
 
 # @app1.route('/scrap_runner', methods=['POST'])
