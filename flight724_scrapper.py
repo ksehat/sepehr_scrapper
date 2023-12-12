@@ -1,13 +1,11 @@
 import datetime
 import pandas as pd
-import pyodbc
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from pymongo import MongoClient
-from persiantools import digits
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 
@@ -214,12 +212,6 @@ class Flight724Scrapper:
             self.error_exit = 1
             return False
 
-
-def trampoline(func, *args, **kwargs):
-    result = func(*args, **kwargs)
-    while not result:
-        result = func(*args, **kwargs)
-    return result
 
 # f_scrapper = Flight724Scrapper('THR', 'MHD', 1)
 # trampoline(f_scrapper.get_flight724_route)
