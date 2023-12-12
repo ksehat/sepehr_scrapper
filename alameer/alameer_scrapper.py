@@ -13,7 +13,7 @@ from selenium.webdriver.common.proxy import Proxy, ProxyType
 
 
 class AlameerScrapper:
-    def __init__(self, orig, dest, days_num, scraping_date=None):
+    def __init__(self, orig, dest, days_num, scraping_date=None, id_from_backend=None):
         self.orig = orig
         self.dest = dest
         self.days_num = days_num
@@ -25,6 +25,7 @@ class AlameerScrapper:
         self.options.add_argument('--ignore-certificate-errors')
         self.options.add_argument('--incognito')
         self.scraping_date = scraping_date
+        self.id_from_backend = id_from_backend
 
 
     def get_alameer_route(self):
@@ -149,6 +150,7 @@ class AlameerScrapper:
                     ActionChains(self.driver).move_to_element(elem11).perform()
 
                 df = pd.DataFrame({
+                    'source': ['alameer.ir'] * len(extra_info),
                     'orig': orig_list,
                     'dest': dest_list,
                     'dur': days_num_list,
@@ -165,6 +167,7 @@ class AlameerScrapper:
                                       extra_info],
                     'flight_class': class_list,
                     'extra_info': extra_info,
+                    'id_from_backend': [self.id_from_backend] * len(extra_info),
                     'scrap_date': [str(datetime.datetime.now())] * len(extra_info)
                 })
 
@@ -184,7 +187,7 @@ class AlameerScrapper:
                     collection = db['alameer']
                     collection.insert_many(result_dict)
             self.driver.close()
-            return True
+            return df
         except Exception as e:
             try:
                 self.driver.close()
