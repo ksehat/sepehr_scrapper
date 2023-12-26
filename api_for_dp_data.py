@@ -1,11 +1,7 @@
 from flask import Flask, request, Response
 import json
 from flask_caching import Cache
-from concurrent.futures import ThreadPoolExecutor
 import hashlib
-import time
-from sepehr_scraper import sepehr_scrapper
-from flight724_scrapper import Flight724Scrapper
 from alameer.alameer_scrapper import AlameerScrapper
 from trampoline import trampoline
 from waitress import serve
