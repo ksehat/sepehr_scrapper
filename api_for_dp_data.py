@@ -1,8 +1,11 @@
+import pandas as pd
 from flask import Flask, request, Response
 import json
 from flask_caching import Cache
 import hashlib
 from alameer.alameer_scrapper import AlameerScrapper
+from flight724.flight724_scrapper import Flight724Scrapper
+from flightio.flightio_scrapper import FlightioScrapper
 from trampoline import trampoline
 from waitress import serve
 from concurrent.futures import ThreadPoolExecutor
@@ -10,9 +13,12 @@ from concurrent.futures import ThreadPoolExecutor
 app1 = Flask(__name__)
 executor = ThreadPoolExecutor()
 cache = Cache(app1, config={'CACHE_TYPE': 'simple'})
+
+
 def generate_request_hash(data):
     hash_object = hashlib.sha256(json.dumps(data, sort_keys=True).encode())
     return hash_object.hexdigest()
+
 
 @app1.route('/call_from_backend_to_scrap', methods=['POST'])
 def call_from_backend():
@@ -24,77 +30,39 @@ def call_from_backend():
         if cache.get(request_hash):
             return Response(status=429)
         cache.set(request_hash, True, timeout=900)
-        result_future = executor.submit(alameer_scrapper, data)
-        result = result_future.result()
+        result_future1 = executor.submit(alameer_scrapper, data)
+        result_future2 = executor.submit(flight724_scrapper, data)
+        result_future3 = executor.submit(flightio_scrapper, data)
+        result1 = result_future1.result()
+        result2 = result_future2.result()
+        result3 = result_future3.result()
         return json.dumps({
             'id': data['id'],
             'Message': "ok",
-            'data': json.dumps(result.to_dict('records'))
-        })
-
-
-# @app1.route('/sepehr360', methods=['POST'])
-# def home():
-#     if (request.method == 'POST'):
-#         data = json.loads(request.data)
-#         result = sepehr_scrapper(data)
-#         try:
-#             return jsonify({'data': (result.to_json(orient='records', force_ascii=False))}).json
-#         except:
-#             return Response(
-#                 "Error in scraper",
-#                 status=400,
-#             )
-#
-#
-# @app1.route('/flight724', methods=['POST'])
-# def flight724_api():
-#     if (request.method == 'POST'):
-#         data = json.loads(request.json)
-#         f_scrapper = Flight724Scrapper(data[0], data[1], data[2])
-#         result = trampoline(f_scrapper.get_flight724_route)
-#         if result:
-#             return Response(
-#                 "Success.",
-#                 status=200,
-#             )
-#         else:
-#             return Response(
-#                 "Error occured.",
-#                 status=400,
-#             )
+            'data': {'alameer_data': result1.to_dict('records') if isinstance(result1, pd.DataFrame) else result1,
+                     'flight724_data': result2.to_dict('records') if isinstance(result2, pd.DataFrame) else result2,
+                     'flightio_data': result3.to_dict('records') if isinstance(result3, pd.DataFrame) else result3}
+        }, ensure_ascii=False)
 
 
 def alameer_scrapper(data):
-    f_scrapper = AlameerScrapper(orig=data['Orig'], dest=data['Dest'], days_num=1, scraping_date=data['date'],
+    f_scrapper = AlameerScrapper(orig=data['Orig'], dest=data['Dest'], days_num=1, flight_date=data['date'],
                                  id_from_backend=data['id'])
     result = trampoline(f_scrapper.get_alameer_route)
     return result
 
 
-# @app1.route('/scrap_runner', methods=['POST'])
-# def scrap_runner():
-#     if (request.method == 'POST'):
-#         data = json.loads(request.json)
-#         if data[0] == 'alameer.ir':
-#             f_scrapper = AlameerScrapper(data[1], data[2], data[3])
-#             result = trampoline(f_scrapper.get_alameer_route)
-#         # if data[0] == 'www.flytodayir.com':
-#         #     f_scrapper = AlameerScrapper(data[0], data[1], data[2])
-#         #     result = trampoline(f_scrapper.get_alameer_route())
-#         # if data[0] == 'www.alibaba.ir':
-#         #     f_scrapper = AlameerScrapper(data[0], data[1], data[2])
-#         #     result = trampoline(f_scrapper.get_alameer_route())
-#         if result:
-#             return Response(
-#                 "Success.",
-#                 status=200,
-#             )
-#         else:
-#             return Response(
-#                 "Error occured.",
-#                 status=400,
-#             )
+def flight724_scrapper(data):
+    f_scrapper = Flight724Scrapper(orig=data['Orig'], dest=data['Dest'], days_num=1, flight_date=data['date'],
+                                   id_from_backend=data['id'])
+    result = trampoline(f_scrapper.get_flight724_route)
+    return result
+
+def flightio_scrapper(data):
+    f_scrapper = FlightioScrapper(orig=data['Orig'], dest=data['Dest'], days_num=1, flight_date=data['date'],
+                                   id_from_backend=data['id'])
+    result = trampoline(f_scrapper.get_flightio_route)
+    return result
 
 
 if __name__ == '__main__':
