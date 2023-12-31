@@ -11,41 +11,6 @@ from selenium.webdriver.common.by import By
 import requests
 from selenium.webdriver.common.action_chains import ActionChains
 from pymongo import MongoClient
-import pyodbc
-
-
-def call_login_token():
-    dict1 = {
-        "username": "k.sehat",
-        "password": "Ks@123456",
-        "applicationType": 961,
-        "iP": "1365"
-    }
-    r = requests.post(url='http://192.168.115.10:8081/api/Authentication/RequestToken',
-                      json=dict1,
-                      )
-    token = json.loads(r.text)['token']
-    expire_date = json.loads(r.text)['expires']
-    return token, expire_date
-
-
-def api_token_handler():
-    if 'token_expire_date.txt' in os.listdir():
-        with open('token_expire_date.txt', 'r') as f:
-            te = f.read()
-        expire_date = te.split('token:')[0]
-        token = te.split('token:')[1]
-        if dt.now() >= dt.strptime(expire_date, '%Y-%m-%d'):
-            token, expire_date = call_login_token()
-            expire_date = expire_date.split('T')[0]
-            with open('token_expire_date.txt', 'w') as f:
-                f.write(expire_date + 'token:' + token)
-    else:
-        token, expire_date = call_login_token()
-        expire_date = expire_date.split('T')[0]
-        with open('token_expire_date.txt', 'w') as f:
-            f.write(expire_date + 'token:' + token)
-    return token
 
 
 class FidsScraper:
@@ -254,28 +219,8 @@ class FidsScraper:
                     db = client['fids_DB']
                     collection = db['fids2']
 
-                    # sql_server = '192.168.40.57'
-                    # sql_database = 'fids_mongodb'
-                    # sql_username = 'k.sehat'
-                    # sql_password = 'K@123456'
-                    # cnxn = pyodbc.connect(driver='{SQL Server}',
-                    #                       server=sql_server,
-                    #                       database=sql_database,
-                    #                       uid=sql_username, pwd=sql_password)
-                    # cursor = cnxn.cursor()
-                    # insert_stmt = "INSERT INTO FIDS_JSON (jsoncontent,SiteName) VALUES (?,?)"
-
-                    # Insert a document
                     if result_dict_final['FidsScraperBatchRequestItemViewModels']:
-                        # Import to MongoDB
                         collection.insert_many(result_dict_final['FidsScraperBatchRequestItemViewModels'])
-                        # Import to SQL
-                        # try:
-                        #     cursor.execute(insert_stmt, (str(df.to_dict()), 'FIDS'))
-                        #     cnxn.commit()
-                        #     cnxn.close()
-                        # except:
-                        #     print(f'data cannot be inserted to SQL for {elem1.text}.')
 
                     self.last_run_num = var1
                     print(elem1.text)
@@ -301,7 +246,7 @@ if __name__ == "__main__":
     scraper.scrape()
 
     while True:
-        if (dt.now().hour == 23 and dt.now().minute == random.randint(1, 20)):
+        if (dt.now().hour == 23 and dt.now().minute == random.randint(1, 10)):
             # or (dt.now().hour == 11 and dt.now().minute == random.randint(1, 59))\
             # or (dt.now().hour == 16 and dt.now().minute == random.randint(1, 59)):
             # or (dt.now().hour == 3 and dt.now().minute == random.randint(1, 59)) \
