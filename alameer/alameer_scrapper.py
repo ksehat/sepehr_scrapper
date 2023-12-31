@@ -13,12 +13,13 @@ from selenium.webdriver.common.proxy import Proxy, ProxyType
 
 
 class AlameerScrapper:
-    def __init__(self, orig, dest, days_num=1, flight_date=None):
+    def __init__(self, orig, dest, days_num=1, flight_date=None, id_from_backend=None):
         self.orig = orig
         self.dest = dest
         self.days_num = days_num
         self.day_num = 0
         self.flight_date = flight_date
+        self.id_from_backend = id_from_backend
         self.orig_dest_are_extracted = False
         self.options = webdriver.ChromeOptions()
         self.options.add_argument('--ignore-certificate-errors')
@@ -74,7 +75,7 @@ class AlameerScrapper:
                 flight_class_list = []
                 for n1 in range(2, len(self.driver.find_elements(By.XPATH, '//div[@class="resu "]')) + 1):
                     elem1 = self.driver.find_element(By.XPATH, f'//div[@class="resu "][{n1}]')
-                    ActionChains(self.driver).move_to_element(elem1).perform()
+                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", elem1)
                     orig_list.append(self.orig)
                     dest_list.append(self.dest)
                     days_num_list.append(self.days_num)
@@ -154,7 +155,8 @@ class AlameerScrapper:
                     'total_cap': [sub_dict['ظرفیت '] for sub_dict in extra_info_dict],
                     'flight_class': flight_class_list,
                     'extra_info': extra_info,
-                    'scrap_date': [str(datetime.datetime.now())] * len(extra_info)
+                    'id_from_backend': self.id_from_backend if self.id_from_backend else 'scrap',
+                    'scrap_date': [str(datetime.datetime.now())] * len(price_list)
                 })
 
                 result_dict = df.to_dict('records')
@@ -174,16 +176,16 @@ class AlameerScrapper:
                     collection.insert_many(result_dict)
                 self.day_num += 1
             self.driver.close()
-            return True
+            return [True, df]
         except Exception as e:
             try:
                 self.driver.close()
             except:
                 pass
-            return False
+            return [False, False]
 
 
-f_scrapper = AlameerScrapper('THR', 'MHD', 3)
-result = False
-while result == False:
-    result = f_scrapper.get_alameer_route()
+# f_scrapper = AlameerScrapper('THR', 'MHD', 3)
+# result = False
+# while result == False:
+#     result = f_scrapper.get_alameer_route()
