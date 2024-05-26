@@ -179,5 +179,8 @@ class TGJUScrapper:
 
 for currency in ['aed', 'eur', 'iqd', 'kwd', 'dollar_rl']:
     # currency = 'dollar_rl'
-    f_scrapper = TGJUScrapper(f'https://www.tgju.org/profile/price_{currency}/history')
-    f_scrapper.get_historical_data(num_of_pages=3)
+    try:
+        f_scrapper = TGJUScrapper(f'https://www.tgju.org/profile/price_{currency}/history')
+        f_scrapper.get_historical_data(num_of_pages=1)
+    except:
+        continue
