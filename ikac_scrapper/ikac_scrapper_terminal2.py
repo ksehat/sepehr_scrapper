@@ -19,7 +19,7 @@ from pymongo import MongoClient
 class ikacScrapper:
     def __init__(self):
         self.last_run_num = 1
-        self.url = "https://www.ikac.ir/flight-status/terminal-1"
+        self.url = "https://www.ikac.ir/flight-status/terminal-salaam"
 
     def initialize_driver(self):
         options = webdriver.ChromeOptions()
@@ -27,7 +27,8 @@ class ikacScrapper:
         options.add_argument('--incognito')
         # options.add_argument('--headless')
         self.driver = webdriver.Chrome(
-            service=Service("E:\Projects\sepehr_scrapper/chromedriver.exe"),
+            service=Service(
+                "C:/Users/Administrator/Desktop/Projects/scraping projects/sepehr_scrapper/chromedriver.exe"),
             options=options)
 
     def close_driver(self):
@@ -40,11 +41,13 @@ class ikacScrapper:
             self.initialize_driver()
             self.driver.get(url=self.url)
             WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, '//*[@id="pnlAirportFlights2468"]/div[2]/div/div[1]/ul/li[1]')))
-            for terminal_in_out in range(self.last_run_num,3):
+                EC.element_to_be_clickable((By.XPATH, '//*[@id="pnlAirportFlights2471"]/div[2]/div/div[1]/ul/li[1]')))
+            for terminal_in_out in range(self.last_run_num, 3):
 
-                self.driver.find_element(By.XPATH, f'//*[@id="pnlAirportFlights2468"]/div[2]/div/div[1]/ul/li[{terminal_in_out}]').click()
-                flights_len = len(self.driver.find_elements(By.XPATH, '//*[@id="pnlAirportFlights2468"]/div[2]/div/div[2]/div/div[2]/div/div[1]/div/div'))
+                self.driver.find_element(By.XPATH,
+                                         f'//*[@id="pnlAirportFlights2471"]/div[2]/div/div[2]/div/div[2]/div/div[{terminal_in_out}]').click()
+                flights_len = len(self.driver.find_elements(By.XPATH,
+                                                            '//*[@id="pnlAirportFlights2471"]/div[2]/div/div[2]/div/div[2]/div/div[1]/div/div'))
                 flight_day = []
                 airline = []
                 flight_number = []
@@ -55,12 +58,14 @@ class ikacScrapper:
                 flight_hour = []
                 flight_hour_real = []
 
-                for flight_num in range(1,flights_len+1):
-                    elem = self.driver.find_element(By.XPATH, f'//*[@id="pnlAirportFlights2468"]/div[2]/div/div[2]/div/div[2]/div/div[1]/div/div[{flight_num}]')
+                for flight_num in range(1, flights_len + 1):
+                    elem = self.driver.find_element(By.XPATH,
+                                                    f'//*[@id="pnlAirportFlights2471"]/div[2]/div/div[2]/div/div[2]/div/div[1]/div/div[{flight_num}]')
                     ActionChains(self.driver).move_to_element(elem).perform()
 
                     try:
-                        element = self.driver.find_element(By.XPATH,f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[1]/div[1]')
+                        element = self.driver.find_element(By.XPATH,
+                                                           f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[1]/div[1]')
                         data_content = element.get_attribute('data-content')
                         soup = BeautifulSoup(data_content, 'html.parser')
                         span = soup.find('span', text='شناسه: ')
@@ -70,13 +75,13 @@ class ikacScrapper:
 
                     try:
                         flight_number.append(self.driver.find_element(By.XPATH,
-                                                           f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[2]').text)
+                                                                      f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[2]').text)
                     except:
                         flight_number.append('')
 
                     try:
                         flight_dest.append(self.driver.find_element(By.XPATH,
-                                                                      f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[3]').text)
+                                                                    f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[3]').text)
                     except:
                         flight_dest.append('')
 
@@ -94,13 +99,13 @@ class ikacScrapper:
 
                     try:
                         flight_hour_real.append(self.driver.find_element(By.XPATH,
-                                                                    f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[6]').text)
+                                                                         f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[6]').text)
                     except:
                         flight_hour_real.append('')
 
                     try:
                         flight_status.append(self.driver.find_element(By.XPATH,
-                                                                         f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[7]').text)
+                                                                      f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[7]').text)
                     except:
                         flight_status.append('')
 
@@ -120,8 +125,8 @@ class ikacScrapper:
                 )
 
                 # Connect to the MongoDB server
-                MONGODB_HOST = '127.0.0.1'
-                MONGODB_PORT = 27017
+                MONGODB_HOST = '192.168.115.17'
+                MONGODB_PORT = 24048
                 MONGODB_USER = 'kanan'
                 MONGODB_PASS = '123456'
                 MONGODB_DB = 'scrap_DB'
