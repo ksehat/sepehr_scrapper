@@ -25,7 +25,7 @@ class FidsScraper:
         options.add_argument('--incognito')
         # options.add_argument('--headless')
         self.driver = webdriver.Chrome(
-            service=Service("C:/Users/Administrator/Desktop/Projects/scraping projects/sepehr_scrapper/chromedriver.exe"),
+            service=Service("C:/Users/Administrator/Desktop/Projects/chromedriver.exe"),
             options=options)
 
     def close_driver(self):
