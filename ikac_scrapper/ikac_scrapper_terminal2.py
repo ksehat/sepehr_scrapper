@@ -28,7 +28,7 @@ class ikacScrapper:
         # options.add_argument('--headless')
         self.driver = webdriver.Chrome(
             service=Service(
-                "C:/Users/Administrator/Desktop/Projects/scraping projects/sepehr_scrapper/chromedriver.exe"),
+                "E:\Projects2\sepehr_scrapper\chromedriver.exe"),
             options=options)
 
     def close_driver(self):
@@ -45,7 +45,7 @@ class ikacScrapper:
             for terminal_in_out in range(self.last_run_num, 3):
 
                 self.driver.find_element(By.XPATH,
-                                         f'//*[@id="pnlAirportFlights2471"]/div[2]/div/div[2]/div/div[2]/div/div[{terminal_in_out}]').click()
+                                         f'//*[@id="pnlAirportFlights2471"]/div[2]/div/div[1]/ul/li[{terminal_in_out}]').click()
                 flights_len = len(self.driver.find_elements(By.XPATH,
                                                             '//*[@id="pnlAirportFlights2471"]/div[2]/div/div[2]/div/div[2]/div/div[1]/div/div'))
                 flight_day = []
@@ -68,7 +68,7 @@ class ikacScrapper:
                                                            f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[1]/div[1]')
                         data_content = element.get_attribute('data-content')
                         soup = BeautifulSoup(data_content, 'html.parser')
-                        span = soup.find('span', text='شناسه: ')
+                        span = soup.find('span', string='شناسه: ')
                         airline.append(span.find_next_sibling('span').text)
                     except:
                         airline.append('')
@@ -80,8 +80,14 @@ class ikacScrapper:
                         flight_number.append('')
 
                     try:
-                        flight_dest.append(self.driver.find_element(By.XPATH,
-                                                                    f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[3]').text)
+                        if terminal_in_out == 1:
+                            flight_dest.append(self.driver.find_element(By.XPATH,
+                                                                      f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[3]').text)
+                            flight_origin.append('IKA')
+                        else:
+                            flight_origin.append(self.driver.find_element(By.XPATH,
+                                                                      f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[3]').text)
+                            flight_dest.append('IKA')
                     except:
                         flight_dest.append('')
 
@@ -116,7 +122,7 @@ class ikacScrapper:
                         'FlightHourReal': flight_hour_real,
                         'Airline': airline,
                         'FlightNumber': flight_number,
-                        'FlightOrigin': ['ikac'] * len(flight_date),
+                        'FlightOrigin': flight_origin,
                         'FlightDest': flight_dest,
                         'FlightStatus': flight_status,
                         'FlightDate': flight_date,

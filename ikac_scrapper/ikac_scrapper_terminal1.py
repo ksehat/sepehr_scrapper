@@ -27,7 +27,7 @@ class ikacScrapper:
         options.add_argument('--incognito')
         # options.add_argument('--headless')
         self.driver = webdriver.Chrome(
-            service=Service("C:/Users/Administrator/Desktop/Projects/scraping projects/sepehr_scrapper/chromedriver.exe"),
+            service=Service("E:\Projects2\sepehr_scrapper\chromedriver.exe"),
             options=options)
 
     def close_driver(self):
@@ -75,8 +75,14 @@ class ikacScrapper:
                         flight_number.append('')
 
                     try:
-                        flight_dest.append(self.driver.find_element(By.XPATH,
+                        if terminal_in_out == 1:
+                            flight_dest.append(self.driver.find_element(By.XPATH,
                                                                       f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[3]').text)
+                            flight_origin.append('IKA')
+                        else:
+                            flight_origin.append(self.driver.find_element(By.XPATH,
+                                                                      f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[3]').text)
+                            flight_dest.append('IKA')
                     except:
                         flight_dest.append('')
 
