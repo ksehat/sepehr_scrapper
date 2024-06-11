@@ -18,8 +18,7 @@ from pymongo import MongoClient
 
 class GheshmScrapper:
     def __init__(self):
-        self.last_run_num = 1
-        self.url = "http://qeshmairport.ir/"
+        self.last_run_num = 0
 
     def initialize_driver(self):
         options = webdriver.ChromeOptions()
@@ -39,17 +38,15 @@ class GheshmScrapper:
         try:
             self.initialize_driver()
             self.driver.maximize_window()
-            self.driver.get(url=self.url)
-            WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, '//*[@id="Content"]/div/div/div/div[2]/div/div/div/div/div/ul/li[2]')))
-            for terminal_in_out in range(self.last_run_num,3):
+            terminal_links = ["http://185.145.187.7:8080/Airports/Fids/PersianArrival",
+                              "http://185.145.187.7:8080/Airports/Fids/PersianDeparture"]
+            for terminal_in_out_link in terminal_links[self.last_run_num:]:
+                self.driver.get(url=terminal_in_out_link)
+                WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.XPATH, '//table[@role="grid"]')))
+                time.sleep(2)
+                flights_len = len(self.driver.find_elements(By.XPATH, f'//table/tbody/tr'))
 
-                self.driver.find_element(By.XPATH, f'//*[@id="Content"]/div/div/div/div[2]/div/div/div/div/div/ul/li[{terminal_in_out}]').click()
-                time.sleep(3)
-                if terminal_in_out == 1:
-                    flights_len = len(self.driver.find_elements(By.XPATH, f'//*[@id="Grid3"]/div[2]/table/tbody/tr[1]'))
-                else:
-                    flights_len = len(self.driver.find_elements(By.XPATH, f'//*[@id="table_2"]/tbody/tr'))
                 airline = []
                 flight_number = []
                 flight_dest = []
@@ -57,56 +54,66 @@ class GheshmScrapper:
                 flight_status = []
                 flight_date = []
                 flight_hour = []
+                flight_hour_real = []
 
-                for flight_num in range(1,flights_len+1):
-                    elem = self.driver.find_element(By.XPATH, f'//*[@id="table_1"]/tbody/tr[{flight_num}]')
+                for flight_num in range(1, flights_len + 1):
+                    elem = self.driver.find_element(By.XPATH, f'//tbody/tr[{flight_num}]')
                     ActionChains(self.driver).move_to_element(elem).perform()
 
                     try:
-                        airline.append(self.driver.find_element(By.XPATH,f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[1]').text)
+                        airline.append(
+                            self.driver.find_element(By.XPATH, f'//tbody/tr[{flight_num}]/td[2]').text)
                     except:
                         airline.append('')
 
                     try:
-                        flight_number.append(self.driver.find_element(By.XPATH,f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[2]').text)
+                        flight_number.append(
+                            self.driver.find_element(By.XPATH, f'//tbody/tr[{flight_num}]/td[3]').text)
                     except:
                         flight_number.append('')
 
                     try:
-                        if terminal_in_out == 1: #if we are scraping the input flights
+                        if 'Arrival' in terminal_in_out_link:  # if we are scraping the input flights
                             flight_orig.append(self.driver.find_element(By.XPATH,
-                                                                      f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[3]').text)
-                            flight_dest.append('KIH')
+                                                                        f'//tbody/tr[{flight_num}]/td[4]').text)
+                            flight_dest.append('GSM')
                         else:
                             flight_dest.append(self.driver.find_element(By.XPATH,
-                                                                      f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[3]').text)
-                            flight_orig.append('KIH')
+                                                                        f'tbody/tr[{flight_num}]/td[4]').text)
+                            flight_orig.append('GSM')
                     except:
                         flight_dest.append('')
-                        flight_orig.append('KIH')
+                        flight_orig.append('')
 
                     try:
                         flight_date.append(self.driver.find_element(By.XPATH,
-                                                                    f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[5]').text)
+                                                                    f'//tbody/tr[{flight_num}]/td[7]').text)
                     except:
                         flight_date.append('')
 
                     try:
                         flight_hour.append(self.driver.find_element(By.XPATH,
-                                                                    f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[6]').text)
+                                                                    f'//tbody/tr[{flight_num}]/td[1]').text)
                     except:
                         flight_hour.append('')
 
                     try:
+                        flight_hour_real.append(self.driver.find_element(By.XPATH,
+                                                                    f'//tbody/tr[{flight_num}]/td[6]').text)
+                    except:
+                        flight_hour_real.append('')
+
+                    try:
                         flight_status.append(self.driver.find_element(By.XPATH,
-                                                                         f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[7]').text)
+                                                                      f'//tbody/tr[{flight_num}]/td[5]').text)
                     except:
                         flight_status.append('')
 
                 df = pd.DataFrame(
                     {
-                        'Airport': ['KIH'] * len(flight_date),
+                        'Airport': ['GSM'] * len(flight_date),
                         'FlightHour': flight_hour,
+                        'FlightHourReal': flight_hour_real,
                         'Airline': airline,
                         'FlightNumber': flight_number,
                         'FlightOrigin': flight_orig,
@@ -129,9 +136,8 @@ class GheshmScrapper:
                                      authSource=MONGODB_DB)
                 # Get the database and collection of MongoDB
                 db = client['scrap_DB']
-                collection = db['kish']
+                collection = db['gheshm']
                 collection.insert_many(df.to_dict('records'))
-                self.last_run_num = terminal_in_out
             self.close_driver()
         except Exception as e:
             try:
@@ -139,7 +145,7 @@ class GheshmScrapper:
             except:
                 pass
             try:
-                self.last_run_num = terminal_in_out
+                self.last_run_num = terminal_links.index(terminal_in_out_link)
             except:
                 pass
             print(f'There occurred an error in the FidsScraper class. {e}')
