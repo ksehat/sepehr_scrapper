@@ -11,6 +11,7 @@ from selenium.webdriver.common.by import By
 import requests
 from selenium.webdriver.common.action_chains import ActionChains
 from pymongo import MongoClient
+from airport_iata.airport_iata import get_iata_code
 
 
 class FidsScraper:
@@ -67,7 +68,7 @@ class FidsScraper:
                         print(f'There occurred an error in the FidsScraper class. {e}')
                         self.scrape()
                     elem1 = self.driver.find_element(By.XPATH, f'(//ul[@class="nav navbar-nav "]/li)[{var1}]')
-                    airport.append(elem1.text)
+                    airport.append(elem1.text.split(' ')[1:])
 
                     flight_day = []
                     airline = []
@@ -107,64 +108,76 @@ class FidsScraper:
                                                                  f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/td[@class="cell-day"]').text)
                                 except:
                                     flight_day.append('')
-                                # try:
-                                #     airline.append(
-                                #         self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
-                                #                                            f'td[@class="cell-airline"]').text)
-                                # except:
-                                #     airline.append('')
+
                                 try:
                                     flight_number.append(
-                                        self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
-                                                                           f'td[@class="cell-fno"]').text)
+                                        self.driver.find_element(By.XPATH,
+                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
+                                                                 f'td[@class="cell-fno"]').text)
                                 except:
                                     flight_number.append('')
+
                                 try:
                                     flight_origin.append(
-                                        self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
-                                                                           f'td[@class="cell-orig"]').text)
+                                        get_iata_code(self.driver.find_element(By.XPATH,
+                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
+                                                                 f'td[@class="cell-orig"]').text))
                                 except:
-                                    flight_origin.append('THR')
+                                    flight_origin.append(get_iata_code(airport[0][0]))
+
                                 try:
                                     flight_dest.append(
-                                        self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
-                                                                           f'td[@class="cell-dest"]').text)
+                                        get_iata_code(self.driver.find_element(By.XPATH,
+                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
+                                                                 f'td[@class="cell-dest"]').text))
                                 except:
-                                    flight_dest.append('THR')
+                                    flight_dest.append(get_iata_code(airport[0][0]))
+
                                 try:
                                     flight_status.append(
-                                        self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
-                                                                           f'td[@class="cell-status"]').text)
+                                        self.driver.find_element(By.XPATH,
+                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
+                                                                 f'td[@class="cell-status"]').text)
                                 except:
                                     flight_status.append('')
+
                                 try:
                                     aircraft2.append(
-                                        self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
-                                                                           f'td[@class="cell-aircraft2"]').text)
+                                        self.driver.find_element(By.XPATH,
+                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
+                                                                 f'td[@class="cell-aircraft2"]').text)
                                 except:
                                     aircraft2.append('')
+
                                 try:
                                     aircraft3.append(
-                                        self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
-                                                                           f'td[@class="cell-aircraft3"]').text)
+                                        self.driver.find_element(By.XPATH,
+                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
+                                                                 f'td[@class="cell-aircraft3"]').text)
                                 except:
                                     aircraft3.append('')
+
                                 try:
                                     aircraft.append(
-                                        self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
-                                                                           f'td[@class="cell-aircraft"]').text)
+                                        self.driver.find_element(By.XPATH,
+                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
+                                                                 f'td[@class="cell-aircraft"]').text)
                                 except:
                                     aircraft.append('')
+
                                 try:
                                     counter.append(
-                                        self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
-                                                                           f'td[@class="cell-counter"]').text)
+                                        self.driver.find_element(By.XPATH,
+                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
+                                                                 f'td[@class="cell-counter"]').text)
                                 except:
                                     counter.append('')
+
                                 try:
                                     flight_date.append(
-                                        self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
-                                                                           f'td[@class="cell-date"]').text)
+                                        self.driver.find_element(By.XPATH,
+                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
+                                                                 f'td[@class="cell-date"]').text)
                                 except:
                                     flight_date.append('')
 
