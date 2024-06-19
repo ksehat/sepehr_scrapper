@@ -124,13 +124,13 @@ class FidsScraper:
                                         self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
                                                                            f'td[@class="cell-orig"]').text)
                                 except:
-                                    flight_origin.append('')
+                                    flight_origin.append('THR')
                                 try:
                                     flight_dest.append(
                                         self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
                                                                            f'td[@class="cell-dest"]').text)
                                 except:
-                                    flight_dest.append('')
+                                    flight_dest.append('THR')
                                 try:
                                     flight_status.append(
                                         self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
