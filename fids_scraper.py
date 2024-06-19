@@ -33,6 +33,16 @@ class FidsScraper:
             self.driver.quit()
             self.driver = None
 
+    def separate_parts(self, text):
+        letters = ""
+        numbers = ""
+        for char in text:
+            if char.isalpha():
+                letters += char
+            elif char.isdigit():
+                numbers += char
+        return letters, numbers
+
     def scrape(self):
         try:
             self.initialize_driver()
@@ -97,12 +107,12 @@ class FidsScraper:
                                                                  f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/td[@class="cell-day"]').text)
                                 except:
                                     flight_day.append('')
-                                try:
-                                    airline.append(
-                                        self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
-                                                                           f'td[@class="cell-airline"]').text)
-                                except:
-                                    airline.append('')
+                                # try:
+                                #     airline.append(
+                                #         self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
+                                #                                            f'td[@class="cell-airline"]').text)
+                                # except:
+                                #     airline.append('')
                                 try:
                                     flight_number.append(
                                         self.driver.find_element(By.XPATH, f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
@@ -173,13 +183,21 @@ class FidsScraper:
                     # df = pd.DataFrame()
                     flight_day_list = [x3.rsplit(' ', maxsplit=1)[0] for x3 in flight_day]
                     flight_hour_list = [x3.rsplit(' ', maxsplit=1)[1] for x3 in flight_day]
+
+                    airline = []
+                    flight_number2 = []
+                    for string in flight_number:
+                        first_part, second_part = self.separate_parts(string)
+                        airline.append(first_part)
+                        flight_number2.append(second_part)
+
                     df = pd.DataFrame(
                         {
                             'Airport': airport * len(flight_day),
                             'FlightDay': flight_day_list,
                             'FlightHour': flight_hour_list,
                             'Airline': airline,
-                            'FlightNumber': flight_number,
+                            'FlightNumber': flight_number2,
                             'FlightOrigin': flight_origin,
                             'FlightDest': flight_dest,
                             'FlightStatus': flight_status,
@@ -206,24 +224,25 @@ class FidsScraper:
                     #                            })
 
                     # Connect to the MongoDB server
-                    MONGODB_HOST = '192.168.115.17'
+                    MONGODB_HOST = '77.238.108.34'
                     MONGODB_PORT = 24048
                     MONGODB_USER = 'kanan'
                     MONGODB_PASS = '123456'
-                    MONGODB_DB = 'fids_DB'
+                    MONGODB_DB = 'scrap_DB'
                     client = MongoClient(MONGODB_HOST, MONGODB_PORT,
                                          username=MONGODB_USER,
                                          password=MONGODB_PASS,
                                          authSource=MONGODB_DB)
                     # Get the database and collection of MongoDB
-                    db = client['fids_DB']
-                    collection = db['fids2']
+                    db = client['scrap_DB']
+                    collection = db['fids']
 
                     if result_dict_final['FidsScraperBatchRequestItemViewModels']:
                         collection.insert_many(result_dict_final['FidsScraperBatchRequestItemViewModels'])
 
                     self.last_run_num = var1
                     print(elem1.text)
+                self.close_driver()
             else:
                 self.close_driver()
                 self.scrape()
