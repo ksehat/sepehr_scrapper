@@ -19,7 +19,7 @@ def process_df(process_dict):
 
 def runner(data):
     try:
-        r = requests.post(url='http://192.168.115.17:3000/scrap_runner', json=json.dumps(list(data)))
+        r = requests.post(url='http://192.168.115.17:3000/scrap_runner', json=json.dumps(data))
         print(list(data), datetime.datetime.now(), r)
     except:
         runner(data)
@@ -48,10 +48,11 @@ for interval in scrap_data['per_hour'].unique():
 
 threads = []
 for k in data_dict.keys():
-    t = threading.Thread(target=process_df, args=[data_dict[k]])
-    t.start()
-    threads.append(t)
+    # t = threading.Thread(target=process_df, args=[data_dict[k]])
+    # t.start()
+    # threads.append(t)
+    runner(data_dict[k])
 
 # Join the threads using a for loop
-for t in threads:
-    t.join()
+# for t in threads:
+#     t.join()
