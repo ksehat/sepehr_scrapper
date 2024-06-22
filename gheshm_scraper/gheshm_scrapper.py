@@ -15,7 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 from pymongo import MongoClient
 from airport_iata.airport_iata import get_iata_code
-
+from utils.persian_to_gregorian_date import persian_to_datetime, persian_time_to_datetime
 
 
 class GheshmScrapper:
@@ -35,7 +35,6 @@ class GheshmScrapper:
         if self.driver:
             self.driver.quit()
             self.driver = None
-
 
     def separate_parts(self, text):
         letters = ""
@@ -88,31 +87,32 @@ class GheshmScrapper:
                     try:
                         if 'Arrival' in terminal_in_out_link:  # if we are scraping the input flights
                             flight_orig.append(get_iata_code(self.driver.find_element(By.XPATH,
-                                                                        f'//tbody/tr[{flight_num}]/td[4]').text))
+                                                                                      f'//tbody/tr[{flight_num}]/td[4]').text))
                             flight_dest.append('GSM')
                         else:
                             flight_dest.append(get_iata_code(self.driver.find_element(By.XPATH,
-                                                                        f'//tbody/tr[{flight_num}]/td[4]').text))
+                                                                                      f'//tbody/tr[{flight_num}]/td[4]').text))
                             flight_orig.append('GSM')
                     except:
                         flight_dest.append('')
                         flight_orig.append('')
 
                     try:
-                        flight_date.append(self.driver.find_element(By.XPATH,
-                                                                    f'//tbody/tr[{flight_num}]/td[7]').text)
+                        flight_date.append(persian_to_datetime(self.driver.find_element(By.XPATH,
+                                                                    f'//tbody/tr[{flight_num}]/td[7]').text))
                     except:
                         flight_date.append('')
 
                     try:
-                        flight_hour.append(self.driver.find_element(By.XPATH,
-                                                                    f'//tbody/tr[{flight_num}]/td[1]').text.split(" ")[1])
+                        flight_hour.append(persian_time_to_datetime(self.driver.find_element(By.XPATH,
+                                                                    f'//tbody/tr[{flight_num}]/td[1]').text.split(" ")[
+                                               1]))
                     except:
                         flight_hour.append('')
 
                     try:
-                        flight_hour_real.append(self.driver.find_element(By.XPATH,
-                                                                    f'//tbody/tr[{flight_num}]/td[6]').text)
+                        flight_hour_real.append(persian_time_to_datetime(self.driver.find_element(By.XPATH,
+                                                                         f'//tbody/tr[{flight_num}]/td[6]').text))
                     except:
                         flight_hour_real.append('')
 
@@ -122,42 +122,46 @@ class GheshmScrapper:
                     except:
                         flight_status.append('')
 
-                    airline = []
-                    flight_number2 = []
-                    for string in flight_number:
-                        first_part, second_part = self.separate_parts(string)
-                        airline.append(first_part)
-                        flight_number2.append(second_part)
+                airline = []
+                flight_number2 = []
+                for string in flight_number:
+                    first_part, second_part = self.separate_parts(string)
+                    airline.append(first_part)
+                    flight_number2.append(second_part)
 
-                    df = pd.DataFrame(
-                        {
-                            'Airport': ['GSM'] * len(flight_date),
-                            'FlightHour': flight_hour,
-                            'FlightHourReal': flight_hour_real,
-                            'Airline': airline,
-                            'FlightNumber': flight_number2,
-                            'FlightOrigin': flight_orig,
-                            'FlightDest': flight_dest,
-                            'FlightStatus': flight_status,
-                            'FlightDate': flight_date,
-                            'Scrape_date': datetime.datetime.now()
-                        }
-                    )
+                formatted_flight_date = [d.strftime("%Y-%m-%d") for d in flight_date]
+                formatted_flight_hour = [d.strftime("%H:%M:%S") for d in flight_hour]
+                formatted_flight_hour_real = [d.strftime("%H:%M:%S") for d in flight_hour_real]
 
-                    # Connect to the MongoDB server
-                    MONGODB_HOST = '192.168.115.17'
-                    MONGODB_PORT = 24048
-                    MONGODB_USER = 'kanan'
-                    MONGODB_PASS = '123456'
-                    MONGODB_DB = 'scrap_DB'
-                    client = MongoClient(MONGODB_HOST, MONGODB_PORT,
-                                         username=MONGODB_USER,
-                                         password=MONGODB_PASS,
-                                         authSource=MONGODB_DB)
-                    # Get the database and collection of MongoDB
-                    db = client['scrap_DB']
-                    collection = db['gheshm']
-                    collection.insert_many(df.to_dict('records'))
+                df = pd.DataFrame(
+                    {
+                        'Airport': ['GSM'] * len(flight_date),
+                        'FlightHour': formatted_flight_hour,
+                        'FlightHourReal': formatted_flight_hour_real,
+                        'Airline': airline,
+                        'FlightNumber': flight_number2,
+                        'FlightOrigin': flight_orig,
+                        'FlightDest': flight_dest,
+                        'FlightStatus': flight_status,
+                        'FlightDate': formatted_flight_date,
+                        'Scrape_date': datetime.datetime.now()
+                    }
+                )
+
+                # Connect to the MongoDB server
+                MONGODB_HOST = '192.168.115.17'
+                MONGODB_PORT = 24048
+                MONGODB_USER = 'kanan'
+                MONGODB_PASS = '123456'
+                MONGODB_DB = 'scrap_DB'
+                client = MongoClient(MONGODB_HOST, MONGODB_PORT,
+                                     username=MONGODB_USER,
+                                     password=MONGODB_PASS,
+                                     authSource=MONGODB_DB)
+                # Get the database and collection of MongoDB
+                db = client['scrap_DB']
+                collection = db['gheshm']
+                collection.insert_many(df.to_dict('records'))
             self.close_driver()
         except Exception as e:
             try:
