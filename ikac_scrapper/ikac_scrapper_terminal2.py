@@ -14,6 +14,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 from pymongo import MongoClient
+from airport_iata.airport_iata import get_iata_code
+from utils.persian_to_gregorian_date import persian_to_datetime, persian_time_to_datetime
 
 
 class ikacScrapper:
@@ -35,6 +37,16 @@ class ikacScrapper:
         if self.driver:
             self.driver.quit()
             self.driver = None
+
+    def separate_parts(self, text):
+        letters = ""
+        numbers = ""
+        for char in text:
+            if char.isalpha():
+                letters += char
+            elif char.isdigit():
+                numbers += char
+        return letters, numbers
 
     def scrape(self):
         try:
@@ -63,15 +75,15 @@ class ikacScrapper:
                                                     f'//*[@id="pnlAirportFlights2471"]/div[2]/div/div[2]/div/div[2]/div/div[1]/div/div[{flight_num}]')
                     ActionChains(self.driver).move_to_element(elem).perform()
 
-                    try:
-                        element = self.driver.find_element(By.XPATH,
-                                                           f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[1]/div[1]')
-                        data_content = element.get_attribute('data-content')
-                        soup = BeautifulSoup(data_content, 'html.parser')
-                        span = soup.find('span', string='شناسه: ')
-                        airline.append(span.find_next_sibling('span').text)
-                    except:
-                        airline.append('')
+                    # try:
+                    #     element = self.driver.find_element(By.XPATH,
+                    #                                        f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[1]/div[1]')
+                    #     data_content = element.get_attribute('data-content')
+                    #     soup = BeautifulSoup(data_content, 'html.parser')
+                    #     span = soup.find('span', string='شناسه: ')
+                    #     airline.append(span.find_next_sibling('span').text)
+                    # except:
+                    #     airline.append('')
 
                     try:
                         flight_number.append(self.driver.find_element(By.XPATH,
@@ -81,31 +93,31 @@ class ikacScrapper:
 
                     try:
                         if terminal_in_out == 1:
-                            flight_dest.append(self.driver.find_element(By.XPATH,
-                                                                      f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[3]').text)
+                            flight_dest.append(get_iata_code(self.driver.find_element(By.XPATH,
+                                                                                      f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[3]').text))
                             flight_origin.append('IKA')
                         else:
-                            flight_origin.append(self.driver.find_element(By.XPATH,
-                                                                      f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[3]').text)
+                            flight_origin.append(get_iata_code(self.driver.find_element(By.XPATH,
+                                                                                        f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[3]').text))
                             flight_dest.append('IKA')
                     except:
                         flight_dest.append('')
 
                     try:
-                        flight_date.append(self.driver.find_element(By.XPATH,
-                                                                    f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[4]').text)
+                        flight_date.append(persian_to_datetime(self.driver.find_element(By.XPATH,
+                                                                    f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[4]').text))
                     except:
                         flight_date.append('')
 
                     try:
-                        flight_hour.append(self.driver.find_element(By.XPATH,
-                                                                    f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[5]').text)
+                        flight_hour.append(persian_time_to_datetime(self.driver.find_element(By.XPATH,
+                                                                    f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[5]').text))
                     except:
                         flight_hour.append('')
 
                     try:
-                        flight_hour_real.append(self.driver.find_element(By.XPATH,
-                                                                         f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[6]').text)
+                        flight_hour_real.append(persian_time_to_datetime(self.driver.find_element(By.XPATH,
+                                                                         f'//div[@class="ez-af-table-row ng-scope"][{flight_num}]/div[6]').text))
                     except:
                         flight_hour_real.append('')
 
@@ -115,17 +127,28 @@ class ikacScrapper:
                     except:
                         flight_status.append('')
 
+                airline = []
+                flight_number2 = []
+                for string in flight_number:
+                    first_part, second_part = self.separate_parts(string)
+                    airline.append(first_part)
+                    flight_number2.append(second_part)
+
+                formatted_flight_date = [d.strftime("%Y-%m-%d") for d in flight_date]
+                formatted_flight_hour = [d.strftime("%H:%M:%S") for d in flight_hour]
+                formatted_flight_hour_real = [d.strftime("%H:%M:%S") for d in flight_hour_real]
+
                 df = pd.DataFrame(
                     {
                         'Airport': ['ikac'] * len(flight_date),
-                        'FlightHour': flight_hour,
-                        'FlightHourReal': flight_hour_real,
+                        'FlightHour': formatted_flight_hour,
+                        'FlightHourReal': formatted_flight_hour_real,
                         'Airline': airline,
-                        'FlightNumber': flight_number,
+                        'FlightNumber': flight_number2,
                         'FlightOrigin': flight_origin,
                         'FlightDest': flight_dest,
                         'FlightStatus': flight_status,
-                        'FlightDate': flight_date,
+                        'FlightDate': formatted_flight_date,
                         'Scrape_date': datetime.datetime.now()
                     }
                 )
@@ -160,8 +183,8 @@ class ikacScrapper:
 
 
 if __name__ == "__main__":
-    scraper = ikacScrapper()
-    scraper.scrape()
+    # scraper = ikacScrapper()
+    # scraper.scrape()
 
     while True:
         if (dt.now().hour == 23 and dt.now().minute == random.randint(1, 10)):
