@@ -207,7 +207,7 @@ class FidsScraper:
                     df = pd.DataFrame(
                         {
                             'Airport': airport * len(flight_day),
-                            'FlightDay': flight_day_list,
+                            # 'FlightDay': flight_day_list,
                             'FlightHour': flight_hour_list,
                             'Airline': airline,
                             'FlightNumber': flight_number2,
