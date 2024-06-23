@@ -12,6 +12,8 @@ import requests
 from selenium.webdriver.common.action_chains import ActionChains
 from pymongo import MongoClient
 from airport_iata.airport_iata import get_iata_code
+from utils.persian_to_gregorian_date import persian_to_datetime, persian_time_to_datetime
+
 
 
 class FidsScraper:
@@ -26,7 +28,7 @@ class FidsScraper:
         options.add_argument('--incognito')
         # options.add_argument('--headless')
         self.driver = webdriver.Chrome(
-            service=Service("C:/Users/Administrator/Desktop/Projects/chromedriver.exe"),
+            service=Service("E:\Projects2\sepehr_scrapper\chromedriver.exe"),
             options=options)
 
     def close_driver(self):
@@ -175,9 +177,9 @@ class FidsScraper:
 
                                 try:
                                     flight_date.append(
-                                        self.driver.find_element(By.XPATH,
+                                        persian_to_datetime(self.driver.find_element(By.XPATH,
                                                                  f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
-                                                                 f'td[@class="cell-date"]').text)
+                                                                 f'td[@class="cell-date"]').text))
                                 except:
                                     flight_date.append('')
 
@@ -193,8 +195,7 @@ class FidsScraper:
                             print(f'There occurred an error in the FidsScraper class. {e}')
                             self.scrape()
 
-                    # df = pd.DataFrame()
-                    flight_day_list = [x3.rsplit(' ', maxsplit=1)[0] for x3 in flight_day]
+                    # flight_day_list = [x3.rsplit(' ', maxsplit=1)[0] for x3 in flight_day]
                     flight_hour_list = [x3.rsplit(' ', maxsplit=1)[1] for x3 in flight_day]
 
                     airline = []
@@ -203,6 +204,9 @@ class FidsScraper:
                         first_part, second_part = self.separate_parts(string)
                         airline.append(first_part)
                         flight_number2.append(second_part)
+
+                    formatted_flight_date = [d.strftime("%Y-%m-%d") for d in flight_date]
+                    formatted_flight_hour = [d.strftime("%H:%M:%S") for d in flight_hour_list]
 
                     df = pd.DataFrame(
                         {
