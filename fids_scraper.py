@@ -113,8 +113,8 @@ class FidsScraper:
 
                                 try:
                                     flight_day.append(
-                                        persian_time_to_datetime(self.driver.find_element(By.XPATH,
-                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/td[@class="cell-day"]').text.split(' ')[0]))
+                                        self.driver.find_element(By.XPATH,
+                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/td[@class="cell-day"]').text.split(' ')[0])
                                 except:
                                     flight_day.append('')
 
@@ -218,8 +218,8 @@ class FidsScraper:
                     df = pd.DataFrame(
                         {
                             'Airport': airport * len(flight_day),
-                            # 'FlightDay': flight_day_list,
-                            'FlightHour': flight_hour_list,
+                            'FlightDay': flight_day,
+                            'FlightHour': flight_hour,
                             'Airline': airline,
                             'FlightNumber': flight_number2,
                             'FlightOrigin': flight_origin,
