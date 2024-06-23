@@ -1,12 +1,37 @@
 from datetime import datetime
 from persiantools.jdatetime import JalaliDateTime
+import persiantools
+
+import pyarabic
+
+def normalize_persian_text(text):
+  normalized_text = text.replace('ي', 'ی')
+  return normalized_text
 
 
 def persian_to_datetime(persian_date_str):
-    if ' ' in persian_date_str:
-        year, month, day = map(int, persian_date_str.split(' ')[0].split("/"))
+    # if ':' in persian_date_str:
+    #     year, month, day = map(int, persian_date_str.split(' ')[0].split("/"))
+    # else:
+    #     year, month, day = map(int, persian_date_str.split("/"))
+    #
+    # persian_date = JalaliDateTime(year, month, day)
+    # christian_date = persian_date.to_gregorian()
+    #
+    # return christian_date.date()
+    parts = persian_date_str.split('/')
+
+    if len(parts) == 3:
+        # Check if it's in the format 'DD/MM/YYYY'
+        if parts[1].isdigit():
+            year, month, day = map(int, parts)
+        else:
+            # Handle format 'DD/month_name/YYYY' (using persiantools)
+            year = int(parts[2])
+            month = int(persiantools.jdatetime.MONTH_NAMES_FA.index(normalize_persian_text(parts[1])))
+            day = int(parts[0])
     else:
-        year, month, day = map(int, persian_date_str.split("/"))
+        raise ValueError("Invalid Persian date format. Please use 'DD/MM/YYYY' or 'DD/month_name/YYYY'.")
 
     persian_date = JalaliDateTime(year, month, day)
     christian_date = persian_date.to_gregorian()
@@ -15,8 +40,11 @@ def persian_to_datetime(persian_date_str):
 
 
 def persian_time_to_datetime(persian_time_str):
-    if ' ' in persian_time_str:
-        year, month, day = map(int, persian_time_str.split(' ')[1].split(":"))
+    if ':' in persian_time_str:
+        try:
+            year, month, day = map(int, persian_time_str.split(' ')[1].split(":"))
+        except:
+            hour, minute = map(int, persian_time_str.split(":"))
     else:
         hour, minute = map(int, persian_time_str.split(":"))
 

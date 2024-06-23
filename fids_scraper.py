@@ -28,7 +28,7 @@ class FidsScraper:
         options.add_argument('--incognito')
         # options.add_argument('--headless')
         self.driver = webdriver.Chrome(
-            service=Service("E:\Projects2\sepehr_scrapper\chromedriver.exe"),
+            service=Service("C://Users//Administrator//Desktop//Projects//sepehr_scrapper//chromedriver.exe"),
             options=options)
 
     def close_driver(self):
@@ -72,8 +72,8 @@ class FidsScraper:
                     elem1 = self.driver.find_element(By.XPATH, f'(//ul[@class="nav navbar-nav "]/li)[{var1}]')
                     airport.append(elem1.text.split(' ')[1:])
 
+                    flight_hour = []
                     flight_day = []
-                    airline = []
                     flight_number = []
                     flight_origin = []
                     flight_dest = []
@@ -105,9 +105,16 @@ class FidsScraper:
                                 ActionChains(self.driver).move_to_element(elem3).perform()
 
                                 try:
+                                    flight_hour.append(
+                                        persian_time_to_datetime(self.driver.find_element(By.XPATH,
+                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/td[@class="cell-day"]').text.split(' ')[1]))
+                                except:
+                                    flight_hour.append('')
+
+                                try:
                                     flight_day.append(
-                                        self.driver.find_element(By.XPATH,
-                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/td[@class="cell-day"]').text)
+                                        persian_time_to_datetime(self.driver.find_element(By.XPATH,
+                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/td[@class="cell-day"]').text.split(' ')[0]))
                                 except:
                                     flight_day.append('')
 
@@ -179,7 +186,7 @@ class FidsScraper:
                                     flight_date.append(
                                         persian_to_datetime(self.driver.find_element(By.XPATH,
                                                                  f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/'
-                                                                 f'td[@class="cell-date"]').text))
+                                                                 f'td[@class="cell-date"]/p').get_attribute('innerHTML').replace(' ','/')[1:-1]))
                                 except:
                                     flight_date.append('')
 
@@ -196,7 +203,7 @@ class FidsScraper:
                             self.scrape()
 
                     # flight_day_list = [x3.rsplit(' ', maxsplit=1)[0] for x3 in flight_day]
-                    flight_hour_list = [x3.rsplit(' ', maxsplit=1)[1] for x3 in flight_day]
+                    # flight_hour_list = [x3.rsplit(' ', maxsplit=1)[1] for x3 in flight_day]
 
                     airline = []
                     flight_number2 = []
@@ -206,7 +213,7 @@ class FidsScraper:
                         flight_number2.append(second_part)
 
                     formatted_flight_date = [d.strftime("%Y-%m-%d") for d in flight_date]
-                    formatted_flight_hour = [d.strftime("%H:%M:%S") for d in flight_hour_list]
+                    formatted_flight_hour = [d.strftime("%H:%M:%S") for d in flight_hour]
 
                     df = pd.DataFrame(
                         {
