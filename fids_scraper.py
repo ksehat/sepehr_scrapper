@@ -107,16 +107,16 @@ class FidsScraper:
                                 try:
                                     flight_hour.append(
                                         persian_time_to_datetime(self.driver.find_element(By.XPATH,
-                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/td[@class="cell-day"]').text.split(' ')[1]))
+                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/td[@class="cell-day"]').text.split(' ')[-1]))
                                 except:
                                     flight_hour.append('')
 
-                                try:
-                                    flight_day.append(
-                                        self.driver.find_element(By.XPATH,
-                                                                 f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/td[@class="cell-day"]').text.split(' ')[0])
-                                except:
-                                    flight_day.append('')
+                                # try:
+                                #     flight_day.append(
+                                #         self.driver.find_element(By.XPATH,
+                                #                                  f'(//div[@id="{tab_name}"]/table/tbody/tr[@class="status-default"])[{var3}]/td[@class="cell-day"]').text.split(' ')[:-1])
+                                # except:
+                                #     flight_day.append('')
 
                                 try:
                                     flight_number.append(
@@ -217,9 +217,9 @@ class FidsScraper:
 
                     df = pd.DataFrame(
                         {
-                            'Airport': airport * len(flight_day),
-                            'FlightDay': flight_day,
-                            'FlightHour': flight_hour,
+                            'Airport': airport[0] * len(airline),
+                            # 'FlightDay': flight_day,
+                            'FlightHour': formatted_flight_hour,
                             'Airline': airline,
                             'FlightNumber': flight_number2,
                             'FlightOrigin': flight_origin,
@@ -229,17 +229,17 @@ class FidsScraper:
                             'ArrivalTime': aircraft3,
                             'Aircraft': aircraft,
                             'Counters': counter,
-                            'FlightDate': flight_date,
+                            'FlightDate': formatted_flight_date,
                             'Scrape_date': datetime.datetime.now()
                         }
                     )
 
-                    result_dict = df.to_dict('records')
-                    result_dict_final = {'FidsScraperBatchRequestItemViewModels': result_dict}
-                    for d in result_dict_final['FidsScraperBatchRequestItemViewModels']:
-                        for k, v in d.items():
-                            if v is None:
-                                d[k] = ""
+                    # result_dict = df.to_dict('records')
+                    # result_dict_final = {'FidsScraperBatchRequestItemViewModels': result_dict}
+                    # for d in result_dict_final['FidsScraperBatchRequestItemViewModels']:
+                    #     for k, v in d.items():
+                    #         if v is None:
+                    #             d[k] = ""
 
                     # r = requests.post(url='http://192.168.115.10:8081/api/FidsScraper/CreateFidsScraperBatch',
                     #                   json=result_dict,
@@ -261,8 +261,7 @@ class FidsScraper:
                     db = client['scrap_DB']
                     collection = db['fids']
 
-                    if result_dict_final['FidsScraperBatchRequestItemViewModels']:
-                        collection.insert_many(result_dict_final['FidsScraperBatchRequestItemViewModels'])
+                    collection.insert_many(df.to_dict('records'))
 
                     self.last_run_num = var1
                     print(elem1.text)
@@ -285,8 +284,8 @@ class FidsScraper:
 
 
 if __name__ == "__main__":
-    scraper = FidsScraper()
-    scraper.scrape()
+    # scraper = FidsScraper()
+    # scraper.scrape()
 
     while True:
         if (dt.now().hour == 23 and dt.now().minute == random.randint(1, 10)):

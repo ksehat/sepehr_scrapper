@@ -10,9 +10,11 @@ def normalize_persian_text(text):
 
 
 def persian_to_datetime(persian_date_str):
+    if ':' in persian_date_str:
+        persian_date_str = persian_date_str.split(' ')[0]
     try:
         parts = persian_date_str.split('/')
-    
+
         if len(parts) == 3:
             # Check if it's in the format 'DD/MM/YYYY'
             if parts[1].isdigit():
@@ -36,11 +38,9 @@ def persian_to_datetime(persian_date_str):
 def persian_time_to_datetime(persian_time_str):
     if ':' in persian_time_str:
         try:
-            year, month, day = map(int, persian_time_str.split(' ')[1].split(":"))
+            hour, minute = map(int, persian_time_str.split(' ')[1].split(":"))
         except:
             hour, minute = map(int, persian_time_str.split(":"))
-    else:
-        hour, minute = map(int, persian_time_str.split(":"))
 
     today = datetime.now().date()
 
