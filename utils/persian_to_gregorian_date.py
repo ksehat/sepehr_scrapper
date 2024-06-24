@@ -2,8 +2,6 @@ from datetime import datetime
 from persiantools.jdatetime import JalaliDateTime
 import persiantools
 
-import pyarabic
-
 def normalize_persian_text(text):
   normalized_text = text.replace('ي', 'ی')
   return normalized_text
