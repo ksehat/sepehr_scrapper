@@ -79,7 +79,7 @@ def get_iata_code(airport_name):
                    {"Airport name": "تنب بزرگ", "IATA code": "تنب بزرگ"},
                    {"Airport name": "سراوان", "IATA code": "سراوان"}]
 
-    airport_df = pd.read_json(json_string)
+    airport_df = pd.DataFrame(json_string)
 
     if airport_name in airport_df['Airport name'].values:
         return airport_df[airport_df['Airport name'] == airport_name]['IATA code'].values[0]

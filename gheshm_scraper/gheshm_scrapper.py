@@ -106,7 +106,7 @@ class GheshmScrapper:
                     try:
                         flight_hour.append(persian_time_to_datetime(self.driver.find_element(By.XPATH,
                                                                     f'//tbody/tr[{flight_num}]/td[1]').text.split(" ")[
-                                               1]))
+                                               -1]))
                     except:
                         flight_hour.append('')
 

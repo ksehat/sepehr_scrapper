@@ -183,13 +183,13 @@ class ikacScrapper:
 
 
 if __name__ == "__main__":
-    # scraper = ikacScrapper()
-    # scraper.scrape()
+    scraper = ikacScrapper()
+    scraper.scrape()
 
-    while True:
-        if (dt.now().hour == 23 and dt.now().minute == random.randint(1, 10)):
-            # or (dt.now().hour == 11 and dt.now().minute == random.randint(1, 59))\
-            # or (dt.now().hour == 16 and dt.now().minute == random.randint(1, 59)):
-            # or (dt.now().hour == 3 and dt.now().minute == random.randint(1, 59)) \
-            scraper = ikacScrapper()
-            scraper.scrape()
+    # while True:
+    #     if (dt.now().hour == 23 and dt.now().minute == random.randint(1, 10)):
+    #         # or (dt.now().hour == 11 and dt.now().minute == random.randint(1, 59))\
+    #         # or (dt.now().hour == 16 and dt.now().minute == random.randint(1, 59)):
+    #         # or (dt.now().hour == 3 and dt.now().minute == random.randint(1, 59)) \
+    #         scraper = ikacScrapper()
+    #         scraper.scrape()
