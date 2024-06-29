@@ -64,9 +64,12 @@ class KishScrapper:
                                          f'//*[@id="flight-hours"]/div/div/div[2]/div/div/div[1]/ul/li[{terminal_in_out}]').click()
                 # time.sleep(3)
                 if terminal_in_out == 1:
-                    flights_len = len(self.driver.find_elements(By.XPATH, f'//*[@id="table_1"]/tbody/tr'))
+                    table_num = "table_1"
                 else:
-                    flights_len = len(self.driver.find_elements(By.XPATH, f'//*[@id="table_2"]/tbody/tr'))
+                    table_num = "table_2"
+
+                flights_len = len(self.driver.find_elements(By.XPATH, f'//*[@id="{table_num}"]/tbody/tr'))
+
                 airline = []
                 flight_number = []
                 flight_dest = []
@@ -77,29 +80,29 @@ class KishScrapper:
                 flight_hour_real = []
 
                 for flight_num in range(1, flights_len + 1):
-                    elem = self.driver.find_element(By.XPATH, f'//*[@id="table_1"]/tbody/tr[{flight_num}]')
+                    elem = self.driver.find_element(By.XPATH, f'//*[@id="{table_num}"]/tbody/tr[{flight_num}]')
                     ActionChains(self.driver).move_to_element(elem).perform()
 
                     try:
                         flight_number.append(
-                            self.driver.find_element(By.XPATH, f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[2]').text)
+                            self.driver.find_element(By.XPATH, f'//*[@id="{table_num}"]/tbody/tr[{flight_num}]/td[2]').text)
                     except:
                         flight_number.append('')
 
                     try:
                         airline.append(
-                            self.driver.find_element(By.XPATH, f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[1]').text)
+                            self.driver.find_element(By.XPATH, f'//*[@id="{table_num}"]/tbody/tr[{flight_num}]/td[1]').text)
                     except:
                         airline.append('')
 
                     try:
                         if terminal_in_out == 1:  # if we are scraping the input flights
                             flight_orig.append(get_iata_code(self.driver.find_element(By.XPATH,
-                                                                                      f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[3]').text))
+                                                                                      f'//*[@id="{table_num}"]/tbody/tr[{flight_num}]/td[3]').text))
                             flight_dest.append('KIH')
                         else:
                             flight_dest.append(get_iata_code(self.driver.find_element(By.XPATH,
-                                                                                      f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[3]').text))
+                                                                                      f'//*[@id="{table_num}"]/tbody/tr[{flight_num}]/td[3]').text))
                             flight_orig.append('KIH')
                     except:
                         flight_dest.append('')
@@ -107,19 +110,19 @@ class KishScrapper:
 
                     try:
                         flight_date.append(persian_to_datetime(self.driver.find_element(By.XPATH,
-                                                                                        f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[5]').text))
+                                                                                        f'//*[@id="{table_num}"]/tbody/tr[{flight_num}]/td[5]').text))
                     except:
                         flight_date.append('')
 
                     try:
                         flight_hour.append(persian_time_to_datetime(self.driver.find_element(By.XPATH,
-                                                                                             f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[6]').text))
+                                                                                             f'//*[@id="{table_num}"]/tbody/tr[{flight_num}]/td[6]').text))
                     except:
                         flight_hour.append('')
 
                     try:
                         flight_hour_real_seperated, flight_status_seperated = string_numeric_extractor(
-                            self.driver.find_element(By.XPATH, f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[7]').text)
+                            self.driver.find_element(By.XPATH, f'//*[@id="{table_num}"]/tbody/tr[{flight_num}]/td[7]').text)
                         try:
                             flight_hour_real.append(persian_time_to_datetime(flight_hour_real_seperated))
                         except:
@@ -194,13 +197,13 @@ class KishScrapper:
 
 
 if __name__ == "__main__":
-    scraper = KishScrapper()
-    scraper.scrape()
+    # scraper = KishScrapper()
+    # scraper.scrape()
 
     while True:
         if (dt.now().hour == 23 and dt.now().minute == random.randint(1, 10)):
             # or (dt.now().hour == 11 and dt.now().minute == random.randint(1, 59))\
             # or (dt.now().hour == 16 and dt.now().minute == random.randint(1, 59)):
             # or (dt.now().hour == 3 and dt.now().minute == random.randint(1, 59)) \
-            scraper = ikacScrapper()
+            scraper = KishScrapper()
             scraper.scrape()
