@@ -1,6 +1,3 @@
-import os
-import json
-import time
 import random
 import datetime
 from datetime import datetime as dt
@@ -8,12 +5,12 @@ import pandas as pd
 from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-import requests
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from bs4 import BeautifulSoup
 from pymongo import MongoClient
+from airport_iata.airport_iata import get_iata_code
+from utils.string_numeric_extractor import string_numeric_extractor
 
 
 class KhalijScrapper:
@@ -57,41 +54,46 @@ class KhalijScrapper:
                 flight_date = []
                 flight_hour = []
                 aircraft = []
+                flight_hour_real = []
 
-                for flight_num in range(1,flights_len+1):
+                for flight_num in range(1, flights_len + 1):
                     if 'dep' in terminal_in_out:
                         scrap_id = 'dep'
                     else:
                         scrap_id = 'arr'
-                    elem = self.driver.find_element(By.XPATH, f'//*[@id="con-{scrap_id}"]/div[2]/table/tbody/tr[{flight_num}]')
+                    elem = self.driver.find_element(By.XPATH,
+                                                    f'//*[@id="con-{scrap_id}"]/div[2]/table/tbody/tr[{flight_num}]')
                     ActionChains(self.driver).move_to_element(elem).perform()
 
                     try:
-                        airline.append(self.driver.find_element(By.XPATH,f'//*[@id="con-{scrap_id}"]/div[2]/table/tbody/tr[{flight_num}]/td[1]').text)
+                        airline.append(self.driver.find_element(By.XPATH,
+                                                                f'//*[@id="con-{scrap_id}"]/div[2]/table/tbody/tr[{flight_num}]/td[1]').text)
                     except:
                         airline.append('')
 
                     try:
-                        flight_number.append(self.driver.find_element(By.XPATH,f'//*[@id="con-{scrap_id}"]/div[2]/table/tbody/tr[{flight_num}]/td[2]').text)
+                        flight_number.append(self.driver.find_element(By.XPATH,
+                                                                      f'//*[@id="con-{scrap_id}"]/div[2]/table/tbody/tr[{flight_num}]/td[2]').text)
                     except:
                         flight_number.append('')
 
                     try:
-                        if terminal_in_out == 't-dep': #if we are scraping the input flights
-                            flight_dest.append(self.driver.find_element(By.XPATH,
-                                                                      f'//*[@id="con-{scrap_id}"]/div[2]/table/tbody/tr[{flight_num}]/td[3]').text)
+                        if terminal_in_out == 't-dep':  # if we are scraping the input flights
+                            flight_dest.append(get_iata_code(self.driver.find_element(By.XPATH,
+                                                                                      f'//*[@id="con-{scrap_id}"]/div[2]/table/tbody/tr[{flight_num}]/td[3]').text))
                             flight_orig.append('PGU')
                         else:
-                            flight_orig.append(self.driver.find_element(By.XPATH,
-                                                                      f'//*[@id="con-arr"]/div[2]/table/tbody/tr[{flight_num}]/td[3]').text)
+                            flight_orig.append(get_iata_code(self.driver.find_element(By.XPATH,
+                                                                                      f'//*[@id="con-arr"]/div[2]/table/tbody/tr[{flight_num}]/td[3]').text))
                             flight_dest.append('PGU')
                     except:
                         flight_dest.append('')
                         flight_orig.append('')
 
                     try:
-                        flight_date.append(self.driver.find_element(By.XPATH,
-                                                                    f'//*[@id="con-{scrap_id}"]/div[2]/table/tbody/tr[{flight_num}]/td[9]').text)
+                        flight_date.append(dt.strptime(self.driver.find_element(By.XPATH,
+                                                                                f'//*[@id="con-{scrap_id}"]/div[2]/table/tbody/tr[{flight_num}]/td[9]').text,
+                                                       "%Y-%m-%d"))
                     except:
                         flight_date.append('')
 
@@ -102,30 +104,39 @@ class KhalijScrapper:
                         flight_hour.append('')
 
                     try:
-                        flight_status.append(self.driver.find_element(By.XPATH,
-                                                                         f'//*[@id="con-{scrap_id}"]/div[2]/table/tbody/tr[{flight_num}]/td[4]').text)
+                        flight_hour_real_seperated, flight_status_seperated = string_numeric_extractor(
+                            self.driver.find_element(By.XPATH,
+                                                     f'//*[@id="con-{scrap_id}"]/div[2]/table/tbody/tr[{flight_num}]/td[4]').text)
+                        try:
+                            flight_hour_real.append(flight_hour_real_seperated)
+                        except:
+                            flight_hour_real.append(flight_hour_real_seperated)
+                        try:
+                            flight_status.append(flight_status_seperated)
+                        except:
+                            flight_status.append(flight_status_seperated)
                     except:
                         flight_status.append('')
+                        flight_hour_real.append('')
 
-                    try:
-                        aircraft.append(self.driver.find_element(By.XPATH,
-                                                                         f'//*[@id="con-{scrap_id}"]/div[2]/table/tbody/tr[{flight_num}]/td[5]').text)
-                    except:
-                        aircraft.append('')
-
-
+                    # try:
+                    #     aircraft.append(self.driver.find_element(By.XPATH,
+                    #                                              f'//*[@id="con-{scrap_id}"]/div[2]/table/tbody/tr[{flight_num}]/td[5]').text)
+                    # except:
+                    #     aircraft.append('')
 
                 df = pd.DataFrame(
                     {
                         'Airport': ['PGU'] * len(flight_date),
                         'FlightHour': flight_hour,
+                        'FlightHourReal': flight_hour_real,
                         'Airline': airline,
                         'FlightNumber': flight_number,
                         'FlightOrigin': flight_orig,
                         'FlightDest': flight_dest,
                         'FlightStatus': flight_status,
                         'FlightDate': flight_date,
-                        'Aircraft': aircraft,
+                        # 'Aircraft': aircraft,
                         'Scrape_date': datetime.datetime.now()
                     }
                 )
@@ -160,8 +171,8 @@ class KhalijScrapper:
 
 
 if __name__ == "__main__":
-    scraper = KhalijScrapper()
-    scraper.scrape()
+    # scraper = KhalijScrapper()
+    # scraper.scrape()
 
     while True:
         if (dt.now().hour == 23 and dt.now().minute == random.randint(1, 10)):

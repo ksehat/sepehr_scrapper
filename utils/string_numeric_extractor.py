@@ -14,6 +14,8 @@ def string_numeric_extractor(text):
         formatted_other = other_part.strip()
         if ' ()' in formatted_other:
             formatted_other = formatted_other.replace(' ()', '')
+        if '()' in formatted_other:
+            formatted_other = formatted_other.replace('()', '')
         return formatted_time, formatted_other
     except:
         return text, text
