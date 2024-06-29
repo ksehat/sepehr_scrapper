@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 from pymongo import MongoClient
 from airport_iata.airport_iata import get_iata_code
 from utils.persian_to_gregorian_date import persian_to_datetime, persian_time_to_datetime
+from utils.string_numeric_extractor import string_numeric_extractor
 
 
 class KishScrapper:
@@ -55,7 +56,7 @@ class KishScrapper:
             WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable(
                     (By.XPATH, '//*[@id="flight-hours"]/div/div/div[2]/div/div/div[1]/ul/li[1]')))
-            while self.driver.find_element(By.XPATH,'//*[@id="table_1"]/thead/tr/th[1]').text != 'هواپیمایی':
+            while self.driver.find_element(By.XPATH, '//*[@id="table_1"]/thead/tr/th[1]').text != 'هواپیمایی':
                 pass
             for terminal_in_out in range(self.last_run_num, 3):
 
@@ -86,13 +87,19 @@ class KishScrapper:
                         flight_number.append('')
 
                     try:
+                        airline.append(
+                            self.driver.find_element(By.XPATH, f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[1]').text)
+                    except:
+                        airline.append('')
+
+                    try:
                         if terminal_in_out == 1:  # if we are scraping the input flights
                             flight_orig.append(get_iata_code(self.driver.find_element(By.XPATH,
-                                                                        f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[3]').text))
+                                                                                      f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[3]').text))
                             flight_dest.append('KIH')
                         else:
                             flight_dest.append(get_iata_code(self.driver.find_element(By.XPATH,
-                                                                        f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[3]').text))
+                                                                                      f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[3]').text))
                             flight_orig.append('KIH')
                     except:
                         flight_dest.append('')
@@ -100,35 +107,47 @@ class KishScrapper:
 
                     try:
                         flight_date.append(persian_to_datetime(self.driver.find_element(By.XPATH,
-                                                                    f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[5]').text))
+                                                                                        f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[5]').text))
                     except:
                         flight_date.append('')
 
                     try:
                         flight_hour.append(persian_time_to_datetime(self.driver.find_element(By.XPATH,
-                                                                    f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[6]').text))
+                                                                                             f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[6]').text))
                     except:
                         flight_hour.append('')
 
                     try:
-                        flight_status_elem = self.driver.find_element(By.XPATH, f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[7]').text
+                        flight_hour_real_seperated, flight_status_seperated = string_numeric_extractor(
+                            self.driver.find_element(By.XPATH, f'//*[@id="table_1"]/tbody/tr[{flight_num}]/td[7]').text)
+                        try:
+                            flight_hour_real.append(persian_time_to_datetime(flight_hour_real_seperated))
+                        except:
+                            flight_hour_real.append(flight_hour_real_seperated)
+                        try:
+                            flight_status.append(flight_status_seperated)
+                        except:
+                            flight_status.append(flight_status_seperated)
                     except:
                         flight_status.append('')
                         flight_hour_real.append('')
 
-
-
-
-                airline = []
-                flight_number2 = []
-                for string in flight_number:
-                    first_part, second_part = self.separate_parts(string)
-                    airline.append(first_part)
-                    flight_number2.append(second_part)
+                # airline = []
+                # flight_number2 = []
+                # for string in flight_number:
+                #     first_part, second_part = self.separate_parts(string)
+                #     airline.append(first_part)
+                #     flight_number2.append(second_part)
 
                 formatted_flight_date = [d.strftime("%Y-%m-%d") for d in flight_date]
                 formatted_flight_hour = [d.strftime("%H:%M:%S") for d in flight_hour]
-                formatted_flight_hour_real = [d.strftime("%H:%M:%S") for d in flight_hour_real]
+
+                formatted_flight_hour_real = []
+                for d in flight_hour_real:
+                    try:
+                        formatted_flight_hour_real.append(d.strftime("%H:%M:%S"))
+                    except:
+                        formatted_flight_hour_real.append('')
 
                 df = pd.DataFrame(
                     {
@@ -136,7 +155,7 @@ class KishScrapper:
                         'FlightHour': formatted_flight_hour,
                         'FlightHourReal': formatted_flight_hour_real,
                         'Airline': airline,
-                        'FlightNumber': flight_number2,
+                        'FlightNumber': flight_number,
                         'FlightOrigin': flight_orig,
                         'FlightDest': flight_dest,
                         'FlightStatus': flight_status,
