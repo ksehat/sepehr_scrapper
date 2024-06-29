@@ -233,38 +233,38 @@ class FidsScraper:
                             'Scrape_date': datetime.datetime.now()
                         }
                     )
+                    if not df.empty:
+                        # result_dict = df.to_dict('records')
+                        # result_dict_final = {'FidsScraperBatchRequestItemViewModels': result_dict}
+                        # for d in result_dict_final['FidsScraperBatchRequestItemViewModels']:
+                        #     for k, v in d.items():
+                        #         if v is None:
+                        #             d[k] = ""
 
-                    # result_dict = df.to_dict('records')
-                    # result_dict_final = {'FidsScraperBatchRequestItemViewModels': result_dict}
-                    # for d in result_dict_final['FidsScraperBatchRequestItemViewModels']:
-                    #     for k, v in d.items():
-                    #         if v is None:
-                    #             d[k] = ""
+                        # r = requests.post(url='http://192.168.115.10:8081/api/FidsScraper/CreateFidsScraperBatch',
+                        #                   json=result_dict,
+                        #                   headers={'Authorization': f'Bearer {token}',
+                        #                            'Content-type': 'application/json',
+                        #                            })
 
-                    # r = requests.post(url='http://192.168.115.10:8081/api/FidsScraper/CreateFidsScraperBatch',
-                    #                   json=result_dict,
-                    #                   headers={'Authorization': f'Bearer {token}',
-                    #                            'Content-type': 'application/json',
-                    #                            })
+                        # Connect to the MongoDB server
+                        MONGODB_HOST = '77.238.108.34'
+                        MONGODB_PORT = 24048
+                        MONGODB_USER = 'kanan'
+                        MONGODB_PASS = '123456'
+                        MONGODB_DB = 'scrap_DB'
+                        client = MongoClient(MONGODB_HOST, MONGODB_PORT,
+                                             username=MONGODB_USER,
+                                             password=MONGODB_PASS,
+                                             authSource=MONGODB_DB)
+                        # Get the database and collection of MongoDB
+                        db = client['scrap_DB']
+                        collection = db['fids']
 
-                    # Connect to the MongoDB server
-                    MONGODB_HOST = '77.238.108.34'
-                    MONGODB_PORT = 24048
-                    MONGODB_USER = 'kanan'
-                    MONGODB_PASS = '123456'
-                    MONGODB_DB = 'scrap_DB'
-                    client = MongoClient(MONGODB_HOST, MONGODB_PORT,
-                                         username=MONGODB_USER,
-                                         password=MONGODB_PASS,
-                                         authSource=MONGODB_DB)
-                    # Get the database and collection of MongoDB
-                    db = client['scrap_DB']
-                    collection = db['fids']
+                        collection.insert_many(df.to_dict('records'))
 
-                    collection.insert_many(df.to_dict('records'))
-
-                    self.last_run_num = var1
-                    print(elem1.text)
+                        self.last_run_num = var1
+                        print(elem1.text)
                 self.close_driver()
             else:
                 self.close_driver()
