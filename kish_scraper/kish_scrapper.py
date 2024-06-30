@@ -60,13 +60,15 @@ class KishScrapper:
                 pass
             for terminal_in_out in range(self.last_run_num, 3):
 
-                self.driver.find_element(By.XPATH,
-                                         f'//*[@id="flight-hours"]/div/div/div[2]/div/div/div[1]/ul/li[{terminal_in_out}]').click()
-                # time.sleep(3)
                 if terminal_in_out == 1:
                     table_num = "table_1"
                 else:
                     table_num = "table_2"
+
+                self.driver.find_element(By.XPATH,
+                                         f'//*[@id="flight-hours"]/div/div/div[2]/div/div/div[1]/ul/li[{terminal_in_out}]').click()
+                while self.driver.find_element(By.XPATH, f'//*[@id="{table_num}"]/thead/tr/th[1]').text != 'هواپیمایی':
+                    pass
 
                 flights_len = len(self.driver.find_elements(By.XPATH, f'//*[@id="{table_num}"]/tbody/tr'))
 
